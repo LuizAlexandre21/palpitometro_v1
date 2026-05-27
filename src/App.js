@@ -83,13 +83,6 @@ const GROUPS = {
 };
 const ALL_MATCHES = Object.entries(GROUPS).flatMap(([g,d])=>d.matches.map(m=>({...m,group:g})));
 
-const PIX_TYPES=[
-  {value:"cpf",label:"CPF",placeholder:"000.000.000-00"},
-  {value:"cnpj",label:"CNPJ",placeholder:"00.000.000/0000-00"},
-  {value:"email",label:"E-mail",placeholder:"seu@email.com"},
-  {value:"celular",label:"Celular",placeholder:"+55 11 99999-9999"},
-  {value:"aleatoria",label:"Chave Aleatória",placeholder:"xxxxxxxx-xxxx-xxxx"},
-];
 
 // ═══════════════════════════════════════════════════
 //  HELPERS
@@ -252,9 +245,8 @@ function GoogleSignInButton({googleReady,label="Entrar com Google"}){
 // ═══════════════════════════════════════════════════
 function LoginModal({participants,poolConfig,onCreatePool,onLogin,onJoin,googleConfig,googleReady,googleError}){
   const [mode,setMode]=useState(participants.length===0?"setup":"select");
-  const [poolName,setPoolName]=useState("Bolão da Copa 2026");
+  const [poolName,setPoolName]=useState("Palpitômetro");
   const [adminName,setAdminName]=useState("");
-  const [fee,setFee]=useState("20");
   const [newName,setNewName]=useState("");
   const hasGoogle=!!(googleConfig?.clientId&&googleReady);
   const overlay={position:"fixed",inset:0,background:"rgba(0,0,0,.9)",backdropFilter:"blur(20px)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:20,overflowY:"auto"};
@@ -264,17 +256,16 @@ function LoginModal({participants,poolConfig,onCreatePool,onLogin,onJoin,googleC
     <div style={overlay}><div style={modal}>
       <div style={{textAlign:"center",marginBottom:26}}>
         <div style={{fontSize:58,filter:"drop-shadow(0 0 24px rgba(245,197,24,.5))"}}>🏆</div>
-        <h2 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:40,color:T.gold,letterSpacing:5,margin:"10px 0 3px",lineHeight:1}}>CRIAR BOLÃO</h2>
-        <p style={{color:T.sub,fontSize:13,margin:0}}>Copa do Mundo 2026 · 48 seleções · 72 jogos</p>
+        <h2 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:40,color:T.gold,letterSpacing:5,margin:"10px 0 3px",lineHeight:1}}>CRIAR CAMPEONATO</h2>
+        <p style={{color:T.sub,fontSize:13,margin:0}}>Palpitômetro Copa 2026 · 100% Gratuito</p>
       </div>
-      <LabelInput label="Nome do Bolão" value={poolName} onChange={setPoolName} placeholder="Bolão da Copa 2026"/>
-      <LabelInput label="Seu nome (você será o admin 👑)" value={adminName} onChange={setAdminName} placeholder="Seu nome"/>
-      <LabelInput label="Taxa de entrada (R$)" value={fee} onChange={setFee} placeholder="20" type="number"/>
-      <button disabled={!poolName.trim()||!adminName.trim()} onClick={()=>onCreatePool(poolName.trim(),adminName.trim(),Number(fee)||0)}
+      <LabelInput label="Nome do Campeonato" value={poolName} onChange={setPoolName} placeholder="Palpitômetro"/>
+      <LabelInput label="Seu nome (você será o administrador)" value={adminName} onChange={setAdminName} placeholder="Seu nome"/>
+      <button disabled={!poolName.trim()||!adminName.trim()} onClick={()=>onCreatePool(poolName.trim(),adminName.trim(),0)}
         style={{width:"100%",padding:15,borderRadius:12,border:"none",marginTop:6,fontFamily:"inherit",
           background:poolName.trim()&&adminName.trim()?`linear-gradient(135deg,${T.gold},#c9a200)`:"rgba(255,255,255,.08)",
           color:poolName.trim()&&adminName.trim()?"#000":T.muted,fontWeight:800,fontSize:15,
-          cursor:poolName.trim()&&adminName.trim()?"pointer":"default"}}>🚀 Criar Bolão</button>
+          cursor:poolName.trim()&&adminName.trim()?"pointer":"default"}}>🚀 Criar Campeonato</button>
     </div></div>
   );
 
@@ -282,7 +273,7 @@ function LoginModal({participants,poolConfig,onCreatePool,onLogin,onJoin,googleC
     <div style={overlay}><div style={modal}>
       <button onClick={()=>setMode("select")} style={{background:"none",border:"none",color:T.gold,cursor:"pointer",fontFamily:"inherit",fontWeight:600,fontSize:14,marginBottom:16,padding:0}}>← Voltar</button>
       <h2 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:32,color:T.gold,letterSpacing:3,margin:"0 0 4px"}}>NOVO PARTICIPANTE</h2>
-      <p style={{color:T.sub,fontSize:13,marginBottom:18}}>Taxa: <strong style={{color:T.gold}}>R$ {poolConfig?.entryFee},00</strong></p>
+      <p style={{color:T.sub,fontSize:13,marginBottom:18}}>Palpitômetro Copa 2026 · 100% Gratuito</p>
       {hasGoogle&&(
         <div style={{marginBottom:16}}>
           <GoogleSignInButton googleReady={googleReady}/>
@@ -292,18 +283,11 @@ function LoginModal({participants,poolConfig,onCreatePool,onLogin,onJoin,googleC
         </div>
       )}
       <LabelInput label="Seu nome" value={newName} onChange={setNewName} placeholder="Como quer ser chamado?"/>
-      {poolConfig?.pixConfig?.key&&(
-        <div style={{padding:"11px 14px",borderRadius:10,background:"rgba(34,197,94,.07)",border:"1px solid rgba(34,197,94,.2)",marginBottom:14}}>
-          <div style={{fontSize:11,color:T.muted,marginBottom:3}}>💳 Pague a taxa via Pix</div>
-          <div style={{color:T.text,fontWeight:700,fontSize:14,fontFamily:"monospace"}}>{poolConfig.pixConfig.key}</div>
-          <div style={{color:T.muted,fontSize:11,marginTop:2}}>{PIX_TYPES.find(t=>t.value===poolConfig.pixConfig.keyType)?.label} · {poolConfig.pixConfig.holderName}</div>
-        </div>
-      )}
       <button disabled={!newName.trim()} onClick={()=>onJoin(newName.trim())}
         style={{width:"100%",padding:14,borderRadius:11,border:"none",fontFamily:"inherit",
           background:newName.trim()?`linear-gradient(135deg,${T.gold},#c9a200)`:"rgba(255,255,255,.08)",
           color:newName.trim()?"#000":T.muted,fontWeight:800,fontSize:15,cursor:newName.trim()?"pointer":"default"}}>
-        Entrar no Bolão →
+        Entrar no Palpitômetro →
       </button>
     </div></div>
   );
@@ -313,7 +297,7 @@ function LoginModal({participants,poolConfig,onCreatePool,onLogin,onJoin,googleC
     <div style={overlay}><div style={modal}>
       <div style={{textAlign:"center",marginBottom:20}}>
         <div style={{fontSize:46}}>🏆</div>
-        <h2 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:34,color:T.gold,letterSpacing:4,margin:"8px 0 2px",lineHeight:1}}>{poolConfig?.name||"BOLÃO DA COPA"}</h2>
+        <h2 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:34,color:T.gold,letterSpacing:4,margin:"8px 0 2px",lineHeight:1}}>{poolConfig?.name||"PALPITÔMETRO"}</h2>
         <p style={{color:T.sub,fontSize:12,margin:0}}>Identifique-se para entrar</p>
       </div>
 
@@ -362,7 +346,7 @@ function LoginModal({participants,poolConfig,onCreatePool,onLogin,onJoin,googleC
 
       <div style={{borderTop:`1px solid ${T.border}`,paddingTop:12}}>
         <button onClick={()=>setMode("new")} style={{width:"100%",padding:"10px",borderRadius:10,border:`1px dashed ${T.border}`,background:"transparent",color:T.sub,cursor:"pointer",fontFamily:"inherit",fontWeight:600,fontSize:13}}>
-          ＋ Sou novo — quero entrar no bolão
+          ＋ Sou novo — quero entrar no Palpitômetro
         </button>
       </div>
     </div></div>
@@ -376,16 +360,14 @@ function HomeView({participants,newName,setNewName,addParticipant,removeParticip
   const total=ALL_MATCHES.length;
   const played=ALL_MATCHES.filter(m=>{const r=results[m.id];return r&&r.home!==""&&r.home!==undefined&&r.away!==""&&r.away!==undefined;}).length;
   const leader=leaderboard[0];
-  const pix=poolConfig?.pixConfig;
-  const hasPix=pix?.key&&pix?.holderName;
   return(
     <div style={{maxWidth:960,margin:"0 auto",padding:"0 20px"}}>
       <div style={{textAlign:"center",padding:"36px 0 28px"}}>
         <div style={{fontSize:70,lineHeight:1,filter:"drop-shadow(0 0 32px rgba(245,197,24,.4))"}}>🏆</div>
-        <h1 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"clamp(42px,8vw,80px)",color:T.gold,letterSpacing:6,margin:"10px 0 5px",lineHeight:.95,textShadow:"0 0 60px rgba(245,197,24,.25)"}}>{poolConfig?.name||"BOLÃO DA COPA"}</h1>
+        <h1 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"clamp(42px,8vw,80px)",color:T.gold,letterSpacing:6,margin:"10px 0 5px",lineHeight:.95,textShadow:"0 0 60px rgba(245,197,24,.25)"}}>{poolConfig?.name||"PALPITÔMETRO"}</h1>
         <p style={{color:T.sub,fontSize:12,letterSpacing:2}}>FIFA WORLD CUP 2026 · EUA · MÉXICO · CANADÁ · 48 SELEÇÕES · 12 GRUPOS</p>
         <div style={{display:"flex",justifyContent:"center",flexWrap:"wrap",gap:18,marginTop:28,padding:"20px 24px",background:T.surface,border:`1px solid ${T.border}`,borderRadius:18,backdropFilter:"blur(12px)"}}>
-          {[{ico:"👥",val:participants.length,lab:"Participantes"},{ico:"⚽",val:`${played}/${total}`,lab:"Jogos"},{ico:"🥇",val:leader?.name||"—",lab:"Líder"},{ico:"⭐",val:leader?.pts??0,lab:"Pts Líder"},{ico:"💰",val:`R$ ${poolConfig?.entryFee||0}`,lab:"Taxa"}].map(s=>(
+          {[{ico:"👥",val:participants.length,lab:"Participantes"},{ico:"⚽",val:`${played}/${total}`,lab:"Jogos"},{ico:"🥇",val:leader?.name||"—",lab:"Líder"},{ico:"⭐",val:leader?.pts??0,lab:"Pts Líder"}].map(s=>(
             <div key={s.lab} style={{textAlign:"center",minWidth:70}}>
               <div style={{fontSize:20}}>{s.ico}</div>
               <div style={{fontSize:18,fontWeight:800,color:T.gold,fontFamily:"'Bebas Neue',sans-serif",letterSpacing:1}}>{s.val}</div>
@@ -394,18 +376,13 @@ function HomeView({participants,newName,setNewName,addParticipant,removeParticip
           ))}
         </div>
       </div>
-      {hasPix&&(
-        <div style={{...card,marginBottom:20,background:"linear-gradient(135deg,rgba(34,197,94,.06),rgba(34,197,94,.02))",border:"1px solid rgba(34,197,94,.2)"}}>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:14}}>
-            <div>
-              <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:5}}><span style={{fontSize:18}}>💳</span><span style={{color:T.text,fontWeight:700,fontSize:14}}>Pagamento via Pix</span><Tag color={T.green}>R$ {poolConfig.entryFee},00</Tag></div>
-              <div style={{color:T.sub,fontSize:12,marginBottom:2}}><strong style={{color:T.text}}>{PIX_TYPES.find(t=>t.value===pix.keyType)?.label}:</strong>{" "}<span style={{fontFamily:"monospace",color:T.gold}}>{pix.key}</span></div>
-              <div style={{color:T.muted,fontSize:11}}>Titular: {pix.holderName}</div>
-            </div>
-            <div style={{display:"flex",gap:7,flexWrap:"wrap"}}><CopyBtn text={pix.key} label="Copiar chave"/><button onClick={()=>setView("config")} style={{padding:"7px 14px",borderRadius:8,border:"1px solid rgba(34,197,94,.3)",background:"rgba(34,197,94,.1)",color:T.green,cursor:"pointer",fontSize:12,fontFamily:"inherit",fontWeight:600}}>Ver QR →</button></div>
-          </div>
-        </div>
-      )}
+      {/* 📊 Google AdSense Slot 1 */}
+      <div style={{margin:"28px auto",maxWidth:730,textAlign:"center"}}>
+        <ins className="adsbygoogle" style={{display:"block"}}
+          data-ad-client="ca-pub-SEU_PUBLISHER_ID"
+          data-ad-slot="SLOT_1" data-ad-format="auto"
+          data-full-width-responsive="true"/>
+      </div>
       <div style={{...card,marginBottom:20}}>
         <h3 style={{color:T.text,fontWeight:700,fontSize:15,margin:"0 0 14px",display:"flex",alignItems:"center",gap:7}}><span>👥</span> Participantes{currentUser?.isAdmin&&<Tag color={T.gold}>Admin</Tag>}</h3>
         {currentUser?.isAdmin&&(
@@ -443,7 +420,7 @@ function HomeView({participants,newName,setNewName,addParticipant,removeParticip
         )}
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:12,marginBottom:32}}>
-        {[{ico:"✏️",label:"Fazer Palpites",sub:"Aposte nos 72 jogos",view:"predictions",accent:"#60a5fa"},{ico:"⚽",label:"Resultados",sub:"Inserir placares reais",view:"results",accent:T.green},{ico:"📊",label:"Grupos",sub:"12 grupos A–L",view:"groups",accent:"#f97316"},{ico:"🥊",label:"Mata-mata",sub:"16avos até a Final",view:"knockout",accent:"#a78bfa"},{ico:"🥇",label:"Ranking",sub:"Quem está ganhando",view:"leaderboard",accent:T.gold},{ico:"⚙️",label:"Config & Pix",sub:"Admin e Google OAuth",view:"config",accent:T.green}].map(a=>(
+        {[{ico:"✏️",label:"Fazer Palpites",sub:"Aposte nos 72 jogos",view:"predictions",accent:"#60a5fa"},{ico:"⚽",label:"Resultados",sub:"Inserir placares reais",view:"results",accent:T.green},{ico:"📊",label:"Grupos",sub:"12 grupos A–L",view:"groups",accent:"#f97316"},{ico:"🥊",label:"Mata-mata",sub:"16avos até a Final",view:"knockout",accent:"#a78bfa"},{ico:"🥇",label:"Ranking",sub:"Quem está ganhando",view:"leaderboard",accent:T.gold},{ico:"⚙️",label:"Configurações",sub:"Admin e Google OAuth",view:"config",accent:T.green}].map(a=>(
           <button key={a.view} onClick={()=>setView(a.view)} style={{padding:"16px 13px",borderRadius:13,textAlign:"left",border:`1px solid ${a.accent}22`,background:`${a.accent}0b`,cursor:"pointer",fontFamily:"inherit",transition:"all .15s"}}
             onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow=`0 6px 24px ${a.accent}20`;}}
             onMouseLeave={e=>{e.currentTarget.style.transform="";e.currentTarget.style.boxShadow="";}}>
@@ -454,7 +431,7 @@ function HomeView({participants,newName,setNewName,addParticipant,removeParticip
         ))}
       </div>
       <div style={{...card,marginBottom:32,background:"rgba(245,197,24,.04)",border:"1px solid rgba(245,197,24,.15)"}}>
-        <h3 style={{color:T.gold,fontWeight:700,fontSize:13,margin:"0 0 10px"}}>📋 Regras do Bolão</h3>
+        <h3 style={{color:T.gold,fontWeight:700,fontSize:13,margin:"0 0 10px"}}>📋 Regras do Palpitômetro</h3>
         <div style={{display:"flex",flexWrap:"wrap",gap:12}}>
           {[{pts:3,ico:"🎯",txt:"Placar exato"},{pts:1,ico:"✅",txt:"Resultado correto (V/E/D)"},{pts:0,ico:"❌",txt:"Resultado errado"}].map(r=>(
             <div key={r.pts} style={{display:"flex",alignItems:"center",gap:7}}>
@@ -463,6 +440,13 @@ function HomeView({participants,newName,setNewName,addParticipant,removeParticip
             </div>
           ))}
         </div>
+      </div>
+      <div style={{padding:"12px 16px",borderRadius:10,background:"rgba(96,165,250,.08)",
+        border:"1px solid rgba(96,165,250,.2)",fontSize:12,color:T.blue,
+        textAlign:"center",lineHeight:1.6,marginBottom:32}}>
+        💙 <strong>Palpitômetro é 100% gratuito e sem fins lucrativos.</strong>{" "}
+        Nenhuma taxa, nenhuma cobrança. Apenas diversão!{" "}
+        Anúncios ajudam a manter o servidor rodando.
       </div>
     </div>
   );
@@ -702,7 +686,7 @@ function LeaderboardView({leaderboard,predictions,results}){
   const breakdown=sel?ALL_MATCHES.map(m=>({...m,pred:predictions[sel.id]?.[m.id],actual:results[m.id],pts:calcPoints(predictions[sel.id]?.[m.id],results[m.id])})):[];
   return(
     <div style={{maxWidth:820,margin:"0 auto",padding:"0 20px"}}>
-      <SectionTitle sub="Ranking completo · Máx. 216 pts (72 jogos × 3)">RANKING DO BOLÃO</SectionTitle>
+      <SectionTitle sub="Ranking completo · Máx. 216 pts (72 jogos × 3)">RANKING DO PALPITÔMETRO</SectionTitle>
       {leaderboard[0]?.pts>0&&<div style={{...card,textAlign:"center",padding:"26px",marginBottom:20,background:"linear-gradient(135deg,rgba(245,197,24,.1),rgba(245,197,24,.02))",border:"1px solid rgba(245,197,24,.3)"}}>
         <Avatar user={leaderboard[0]} size={64}/><div style={{marginTop:8}}/>
         <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:40,color:T.gold,letterSpacing:4,marginTop:6,lineHeight:1}}>{leaderboard[0].name.toUpperCase()}</div>
@@ -743,18 +727,10 @@ function LeaderboardView({leaderboard,predictions,results}){
 // ═══════════════════════════════════════════════════
 //  CONFIG VIEW
 // ═══════════════════════════════════════════════════
-function ConfigView({poolConfig,updatePoolConfig,pixConfig,updatePixConfig,googleConfig,updateGoogleConfig,participants,currentUser,googleReady,googleError}){
+function ConfigView({poolConfig,updatePoolConfig,googleConfig,updateGoogleConfig,participants,currentUser,googleReady,googleError}){
   const [tab,setTab]=useState("google");
   const isAdmin=currentUser?.isAdmin;
-  const pixPayload=pixConfig?.key&&pixConfig?.holderName&&pixConfig?.city
-    ?buildPixPayload({key:pixConfig.key,holderName:pixConfig.holderName,city:pixConfig.city,amount:poolConfig?.entryFee||0}):null;
-  const inviteLines=[`🏆 ${poolConfig?.name||"Bolão da Copa"}`,``,`Você foi convidado para o bolão da Copa 2026!`,``,
-    `💰 Taxa: R$ ${poolConfig?.entryFee||0},00`,
-    pixConfig?.key?`\n📱 Pix (${PIX_TYPES.find(t=>t.value===pixConfig.keyType)?.label}): ${pixConfig.key}`:"",
-    pixConfig?.holderName?`👤 Titular: ${pixConfig.holderName}`:"",
-    ``,`✅ Pague, cadastre seu nome e faça seus palpites!`,
-  ].filter(l=>l!=="").join("\n");
-  const tabs=[{id:"google",label:"🔑 Google OAuth"},{id:"pix",label:"💳 Chave Pix"},{id:"invite",label:"🔗 QR Convite"},{id:"pool",label:"⚙️ Bolão"}];
+  const tabs=[{id:"google",label:"🔑 Google OAuth"},{id:"pool",label:"⚙️ Configurações"}];
   return(
     <div style={{maxWidth:920,margin:"0 auto",padding:"0 20px"}}>
       <SectionTitle sub={isAdmin?`Administrador: ${currentUser?.name}`:"Visualização — somente o admin edita"}>CONFIGURAÇÕES</SectionTitle>
@@ -829,51 +805,10 @@ function ConfigView({poolConfig,updatePoolConfig,pixConfig,updatePixConfig,googl
         </div>
       )}
 
-      {/* ── PIX TAB ── */}
-      {tab==="pix"&&(
-        <div style={{display:"grid",gridTemplateColumns:"1fr auto",gap:18,alignItems:"start"}}>
-          <div style={card}>
-            <h3 style={{color:T.text,fontWeight:700,fontSize:15,margin:"0 0 16px"}}>💳 Chave Pix do Admin</h3>
-            <div style={{marginBottom:13}}>
-              <label style={{display:"block",color:T.sub,fontSize:10,fontWeight:700,marginBottom:6,letterSpacing:.8,textTransform:"uppercase"}}>Tipo de Chave</label>
-              <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
-                {PIX_TYPES.map(pt=><button key={pt.value} disabled={!isAdmin} onClick={()=>isAdmin&&updatePixConfig({...pixConfig,keyType:pt.value})}
-                  style={{padding:"5px 11px",borderRadius:7,border:`1px solid ${pixConfig?.keyType===pt.value?"rgba(245,197,24,.5)":T.border}`,background:pixConfig?.keyType===pt.value?"rgba(245,197,24,.12)":"rgba(255,255,255,.04)",color:pixConfig?.keyType===pt.value?T.gold:T.muted,fontWeight:pixConfig?.keyType===pt.value?700:400,cursor:isAdmin?"pointer":"default",fontSize:11,fontFamily:"inherit"}}>{pt.label}</button>)}
-              </div>
-            </div>
-            <LabelInput label="Chave Pix" value={pixConfig?.key} onChange={v=>isAdmin&&updatePixConfig({...pixConfig,key:v})} placeholder={PIX_TYPES.find(t=>t.value===pixConfig?.keyType)?.placeholder} disabled={!isAdmin}/>
-            <LabelInput label="Nome do titular" value={pixConfig?.holderName} onChange={v=>isAdmin&&updatePixConfig({...pixConfig,holderName:v})} placeholder="Fulano da Silva" disabled={!isAdmin}/>
-            <LabelInput label="Cidade" value={pixConfig?.city} onChange={v=>isAdmin&&updatePixConfig({...pixConfig,city:v})} placeholder="São Paulo" disabled={!isAdmin}/>
-            <LabelInput label="Valor da taxa (R$)" value={poolConfig?.entryFee} onChange={v=>isAdmin&&updatePoolConfig({...poolConfig,entryFee:v})} placeholder="20" type="number" disabled={!isAdmin}/>
-            {pixConfig?.key&&<div style={{padding:"10px 14px",borderRadius:9,background:`${T.green}0a`,border:`1px solid ${T.green}25`,display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:7,marginTop:5}}><div style={{fontSize:9,color:T.muted,marginBottom:1,textTransform:"uppercase"}}>Chave configurada</div><div style={{color:T.text,fontWeight:700,fontSize:13,fontFamily:"monospace"}}>{pixConfig.key}</div><CopyBtn text={pixConfig.key} label="Copiar"/></div>}
-          </div>
-          <div style={{...card,textAlign:"center",minWidth:220}}>
-            <div style={{fontSize:10,color:T.muted,fontWeight:700,marginBottom:10,textTransform:"uppercase",letterSpacing:.5}}>QR Code Pix</div>
-            {pixPayload?<><div style={{display:"flex",justifyContent:"center",marginBottom:9}}><QRImage data={pixPayload} size={180}/></div><div style={{fontSize:10,color:T.muted,marginBottom:7}}>📱 Escaneie com o app do banco</div><CopyBtn text={pixPayload} label="Copiar payload"/>{Number(poolConfig?.entryFee)>0&&<div style={{marginTop:11,padding:"7px 11px",borderRadius:8,background:`${T.gold}10`,border:`1px solid ${T.gold}25`}}><div style={{color:T.muted,fontSize:9,marginBottom:1}}>Valor no QR</div><div style={{color:T.gold,fontWeight:800,fontSize:19,fontFamily:"'Bebas Neue',sans-serif"}}>R$ {Number(poolConfig.entryFee).toFixed(2)}</div></div>}</>
-              :<div style={{width:180,height:180,borderRadius:11,background:"rgba(255,255,255,.03)",border:`2px dashed ${T.border}`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",color:T.muted,fontSize:11,gap:6,margin:"0 auto"}}><span style={{fontSize:26}}>📱</span><span style={{textAlign:"center",lineHeight:1.5}}>Preencha a chave,<br/>nome e cidade</span></div>}
-          </div>
-        </div>
-      )}
-      {tab==="invite"&&(
-        <div style={{display:"grid",gridTemplateColumns:"1fr auto",gap:18,alignItems:"start"}}>
-          <div style={card}>
-            <h3 style={{color:T.text,fontWeight:700,fontSize:15,margin:"0 0 11px"}}>🔗 QR Code de Convite</h3>
-            <p style={{color:T.sub,fontSize:13,marginBottom:14,lineHeight:1.6}}>Compartilhe para convidar novos participantes. Ao escanear, verão as informações do bolão e a chave Pix.</p>
-            <div style={{padding:"12px 14px",borderRadius:9,background:"rgba(255,255,255,.04)",border:`1px solid ${T.border}`,fontFamily:"monospace",fontSize:11,color:T.sub,whiteSpace:"pre-wrap",lineHeight:1.7,marginBottom:12}}>{inviteLines}</div>
-            <CopyBtn text={inviteLines} label="Copiar texto de convite"/>
-          </div>
-          <div style={{...card,textAlign:"center",minWidth:220}}>
-            <div style={{fontSize:10,color:T.muted,fontWeight:700,marginBottom:10,textTransform:"uppercase",letterSpacing:.5}}>QR de Convite</div>
-            <div style={{display:"flex",justifyContent:"center",marginBottom:9}}><QRImage data={inviteLines} size={180}/></div>
-            <div style={{fontSize:10,color:T.muted,marginBottom:7}}>📷 Qualquer câmera lê</div>
-            <div style={{padding:"7px 11px",borderRadius:8,background:"rgba(167,139,250,.08)",border:"1px solid rgba(167,139,250,.2)",fontSize:11,color:T.purple,marginTop:7,lineHeight:1.5}}>Envie pelo WhatsApp ou imprima</div>
-          </div>
-        </div>
-      )}
       {tab==="pool"&&(
         <div style={card}>
-          <h3 style={{color:T.text,fontWeight:700,fontSize:15,margin:"0 0 16px"}}>⚙️ Configurações do Bolão</h3>
-          <LabelInput label="Nome do Bolão" value={poolConfig?.name} onChange={v=>isAdmin&&updatePoolConfig({...poolConfig,name:v})} placeholder="Bolão da Copa 2026" disabled={!isAdmin}/>
+          <h3 style={{color:T.text,fontWeight:700,fontSize:15,margin:"0 0 16px"}}>⚙️ Configurações do Palpitômetro</h3>
+          <LabelInput label="Nome do Campeonato" value={poolConfig?.name} onChange={v=>isAdmin&&updatePoolConfig({...poolConfig,name:v})} placeholder="Palpitômetro" disabled={!isAdmin}/>
           <div style={{borderTop:`1px solid ${T.border}`,paddingTop:16,marginTop:4}}>
             <h4 style={{color:T.sub,fontSize:10,margin:"0 0 11px",textTransform:"uppercase",letterSpacing:.8,fontWeight:700}}>Participantes ({participants.length})</h4>
             <div style={{display:"flex",flexDirection:"column",gap:7}}>
@@ -937,8 +872,7 @@ export default function App(){
   const [koMatches,setKoMatches]=useState({});
   const [currentUser,setCurrentUser]=useState(null);
   const [showLogin,setShowLogin]=useState(false);
-  const [poolConfig,setPoolConfig]=useState({name:"Bolão da Copa 2026",entryFee:20});
-  const [pixConfig,setPixConfig]=useState({keyType:"cpf",key:"",holderName:"",city:""});
+  const [poolConfig,setPoolConfig]=useState({name:"Palpitômetro"});
   const [googleConfig,setGoogleConfig]=useState({clientId:"",adminEmail:""});
   const [googleReady,setGoogleReady]=useState(false);
   const [googleError,setGoogleError]=useState("");
@@ -995,12 +929,12 @@ export default function App(){
     if(!googleConfig.clientId) return;
     setGoogleReady(false);
     setGoogleError("");
-    window._bolaoGoogleCb=(r)=>handleGoogleCredential(r);
+    window._palpitometroGoogleCb=(r)=>handleGoogleCredential(r);
     const init=()=>{
       try{
         window.google.accounts.id.initialize({
           client_id:googleConfig.clientId,
-          callback:(r)=>window._bolaoGoogleCb(r),
+          callback:(r)=>window._palpitometroGoogleCb(r),
           auto_select:false,
           use_fedcm_for_prompt:false,
           itp_support:true,
@@ -1032,14 +966,13 @@ export default function App(){
   useEffect(()=>{
     async function load(){
       try{
-        const keys=["bc-participants","bc-results","bc-predictions","bc-komatches","bc-pool","bc-pix","bc-google","bc-currentUser"];
-        const [p,r,pr,km,pool,pix,gc,cu]=await Promise.all(keys.map(k=>window.storage.get(k).catch(()=>null)));
+        const keys=["bc-participants","bc-results","bc-predictions","bc-komatches","bc-pool","bc-google","bc-currentUser"];
+        const [p,r,pr,km,pool,gc,cu]=await Promise.all(keys.map(k=>window.storage.get(k).catch(()=>null)));
         if(p) setParticipants(JSON.parse(p.value));
         if(r) setResults(JSON.parse(r.value));
         if(pr) setPredictions(JSON.parse(pr.value));
         if(km) setKoMatches(JSON.parse(km.value));
         if(pool) setPoolConfig(JSON.parse(pool.value));
-        if(pix) setPixConfig(JSON.parse(pix.value));
         if(gc) setGoogleConfig(JSON.parse(gc.value));
         if(cu){
           const saved=JSON.parse(cu.value);
@@ -1060,11 +993,10 @@ export default function App(){
   const updatePrediction=(pid,mid,side,val)=>{const u={...predictions,[pid]:{...(predictions[pid]||{}),[mid]:{...(predictions[pid]?.[mid]||{}),[side]:val}}};setPredictions(u);sv("bc-predictions",u);};
   const updateKOMatch=(mid,field,val)=>{const u={...koMatches,[mid]:{...(koMatches[mid]||{}),[field]:val}};setKoMatches(u);sv("bc-komatches",u);};
   const updatePoolConfig=(cfg)=>{setPoolConfig(cfg);sv("bc-pool",cfg);};
-  const updatePixConfig=(cfg)=>{setPixConfig(cfg);sv("bc-pix",cfg);};
   const updateGoogleConfig=(cfg)=>{setGoogleConfig(cfg);sv("bc-google",cfg);};
-  const handleCreatePool=(name,adminName,fee)=>{
+  const handleCreatePool=(name,adminName)=>{
     const admin={id:Date.now(),name:adminName,isAdmin:true};
-    const pool={name,entryFee:fee};
+    const pool={name};
     setParticipants([admin]);sv("bc-participants",[admin]);
     setPoolConfig(pool);sv("bc-pool",pool);
     setCurrentUser(admin);sv("bc-currentUser",admin);
@@ -1083,20 +1015,18 @@ export default function App(){
   const allStandings=useMemo(()=>{const s={};Object.keys(GROUPS).forEach(k=>{s[k]=groupStandings(k,results);});return s;},[results]);
 
   const navItems=[{id:"home",label:"Início",ico:"🏠"},{id:"predictions",label:"Palpites",ico:"✏️"},{id:"results",label:"Resultados",ico:"⚽"},{id:"groups",label:"Grupos",ico:"📊"},{id:"knockout",label:"Mata-mata",ico:"🥊"},{id:"leaderboard",label:"Ranking",ico:"🥇"},{id:"config",label:"Config",ico:"⚙️"}];
-  const mergedPool={...poolConfig,pixConfig};
-
-  if(!loaded) return <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height:"100vh",background:T.bg,color:T.gold,fontFamily:"sans-serif",gap:12}}><div style={{fontSize:48}}>⚽</div><div style={{fontSize:15,letterSpacing:2}}>CARREGANDO BOLÃO…</div></div>;
+  if(!loaded) return <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height:"100vh",background:T.bg,color:T.gold,fontFamily:"sans-serif",gap:12}}><div style={{fontSize:48}}>⚽</div><div style={{fontSize:15,letterSpacing:2}}>CARREGANDO PALPITÔMETRO…</div></div>;
 
   return(
     <div style={{minHeight:"100vh",background:T.bg,fontFamily:"'DM Sans',system-ui,sans-serif",color:T.text}}>
       <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,background:"radial-gradient(ellipse 60% 40% at 10% 0%,rgba(34,100,34,.1) 0%,transparent 60%),radial-gradient(ellipse 50% 50% at 90% 100%,rgba(245,197,24,.07) 0%,transparent 60%)"}}/>
-      {showLogin&&<LoginModal participants={participants} poolConfig={mergedPool} onCreatePool={handleCreatePool} onLogin={handleLogin} onJoin={handleJoin} googleConfig={googleConfig} googleReady={googleReady} googleError={googleError}/>}
+      {showLogin&&<LoginModal participants={participants} poolConfig={poolConfig} onCreatePool={handleCreatePool} onLogin={handleLogin} onJoin={handleJoin} googleConfig={googleConfig} googleReady={googleReady} googleError={googleError}/>}
       <header style={{position:"sticky",top:0,zIndex:100,background:"rgba(7,10,20,.94)",borderBottom:`1px solid ${T.border}`,backdropFilter:"blur(20px)"}}>
         <div style={{maxWidth:1200,margin:"0 auto",padding:"0 16px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8,minHeight:56}}>
           <div style={{display:"flex",alignItems:"center",gap:9}}>
             <span style={{fontSize:20,filter:"drop-shadow(0 0 8px rgba(245,197,24,.5))"}}>🏆</span>
             <div>
-              <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:17,color:T.gold,letterSpacing:4,lineHeight:1}}>{poolConfig?.name||"BOLÃO DA COPA"}</div>
+              <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:17,color:T.gold,letterSpacing:4,lineHeight:1}}>{poolConfig?.name||"PALPITÔMETRO"}</div>
               <div style={{fontSize:8,color:T.muted,letterSpacing:2,textTransform:"uppercase"}}>FIFA World Cup 2026 · 48 Seleções</div>
             </div>
           </div>
@@ -1107,13 +1037,13 @@ export default function App(){
         </div>
       </header>
       <main style={{position:"relative",zIndex:1,paddingTop:26,paddingBottom:80}}>
-        {view==="home"&&<HomeView participants={participants} newName={newName} setNewName={setNewName} addParticipant={addParticipant} removeParticipant={removeParticipant} predictions={predictions} results={results} leaderboard={leaderboard} setView={setView} poolConfig={mergedPool} currentUser={currentUser}/>}
+        {view==="home"&&<HomeView participants={participants} newName={newName} setNewName={setNewName} addParticipant={addParticipant} removeParticipant={removeParticipant} predictions={predictions} results={results} leaderboard={leaderboard} setView={setView} poolConfig={poolConfig} currentUser={currentUser}/>}
         {view==="predictions"&&<PredictionsView participants={participants} activePart={activePart} setActivePart={setActivePart} predictions={predictions} updatePrediction={updatePrediction} results={results} currentUser={currentUser}/>}
         {view==="results"&&<ResultsView results={results} updateResult={updateResult} currentUser={currentUser}/>}
         {view==="groups"&&<GroupsView allStandings={allStandings}/>}
         {view==="knockout"&&<KnockoutView koMatches={koMatches} updateKOMatch={updateKOMatch} currentUser={currentUser}/>}
         {view==="leaderboard"&&<LeaderboardView leaderboard={leaderboard} predictions={predictions} results={results}/>}
-        {view==="config"&&<ConfigView poolConfig={mergedPool} updatePoolConfig={updatePoolConfig} pixConfig={pixConfig} updatePixConfig={updatePixConfig} googleConfig={googleConfig} updateGoogleConfig={updateGoogleConfig} participants={participants} currentUser={currentUser} googleReady={googleReady} googleError={googleError}/>}
+        {view==="config"&&<ConfigView poolConfig={poolConfig} updatePoolConfig={updatePoolConfig} googleConfig={googleConfig} updateGoogleConfig={updateGoogleConfig} participants={participants} currentUser={currentUser} googleReady={googleReady} googleError={googleError}/>}
       </main>
     </div>
   );
