@@ -3,6 +3,7 @@ import { useAuth } from "./hooks/useAuth";
 import { useCampeonato } from "./hooks/useCampeonato";
 import { AuthModal } from "./components/AuthModal";
 import { CampeonatoGate } from "./components/CampeonatoGate";
+import { AdSlot } from "./components/AdSlot";
 
 // ═══════════════════════════════════════════════════
 //  DATA  (same 48 seleções, 12 grupos, 72 jogos)
@@ -215,12 +216,8 @@ function HomeView({participants,newName,setNewName,addParticipant,removeParticip
           ))}
         </div>
       </div>
-      {/* 📊 Google AdSense Slot 1 */}
-      <div style={{margin:"28px auto",maxWidth:730,textAlign:"center"}}>
-        <ins className="adsbygoogle" style={{display:"block"}}
-          data-ad-client="ca-pub-SEU_PUBLISHER_ID"
-          data-ad-slot="SLOT_1" data-ad-format="auto"
-          data-full-width-responsive="true"/>
+      <div style={{ margin: "28px auto", maxWidth: 730 }}>
+        <AdSlot slot={process.env.REACT_APP_ADSENSE_SLOT_HOME} format="auto" />
       </div>
       <div style={{...card,marginBottom:20}}>
         <h3 style={{color:T.text,fontWeight:700,fontSize:15,margin:"0 0 14px",display:"flex",alignItems:"center",gap:7}}><span>👥</span> Participantes{currentUser?.isAdmin&&<Tag color={T.gold}>Admin</Tag>}</h3>
@@ -868,7 +865,7 @@ export default function App() {
           <UserMenu currentUser={currentUser} onLogout={async () => { await logout(); setCampeonatoId(null); }} onSwitch={() => setCampeonatoId(null)} />
         </div>
       </header>
-      <main style={{ position:"relative",zIndex:1,paddingTop:26,paddingBottom:80 }}>
+      <main style={{ position:"relative",zIndex:1,paddingTop:26,paddingBottom:120 }}>
         {view==="home"&&<HomeView participants={participants} newName={newName} setNewName={setNewName} addParticipant={addParticipant} removeParticipant={removeParticipant} predictions={predictions} results={results} leaderboard={leaderboard} setView={setView} poolConfig={poolConfig} currentUser={currentUser} campeonatoId={campeonatoId} inviteCode={data?.pool?.inviteCode}/>}
         {view==="predictions"&&<PredictionsView participants={participants} activePart={activePart} setActivePart={setActivePart} predictions={predictions} updatePrediction={updatePrediction} results={results} currentUser={currentUser}/>}
         {view==="results"&&<ResultsView results={results} updateResult={updateResult} currentUser={currentUser}/>}
@@ -877,6 +874,18 @@ export default function App() {
         {view==="leaderboard"&&<LeaderboardView leaderboard={leaderboard} predictions={predictions} results={results}/>}
         {view==="config"&&<ConfigView poolConfig={poolConfig} updatePoolConfig={updatePoolConfig} participants={participants} currentUser={currentUser} campeonatoId={campeonatoId} inviteCode={data?.pool?.inviteCode}/>}
       </main>
+      {/* Banner fixo rodapé */}
+      <div style={{
+        position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50,
+        background: "rgba(7,10,20,.95)", borderTop: "1px solid rgba(255,255,255,.08)",
+        backdropFilter: "blur(12px)", padding: "6px 16px",
+      }}>
+        <AdSlot
+          slot={process.env.REACT_APP_ADSENSE_SLOT_FOOTER}
+          format="horizontal"
+          style={{ maxWidth: 728, margin: "0 auto" }}
+        />
+      </div>
     </div>
   );
 }
