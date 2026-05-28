@@ -14,7 +14,7 @@ export function SectionHeader({ title, subtitle, action }) {
         </div>
         {action && <div>{action}</div>}
       </div>
-      <div style={{ height: 1, background: "rgba(255,255,255,0.06)" }} />
+      <div style={{ height: 1, background: "var(--divider)" }} />
     </div>
   );
 }

@@ -26,8 +26,8 @@ export function LeaderboardRow({ rank, participant, points, maxPoints, isCurrent
       gap: 12,
       padding: "12px 14px",
       borderRadius: 12,
-      background: isCurrentUser ? "rgba(59,130,246,0.07)" : T.surface,
-      border: `1px solid ${isCurrentUser ? "rgba(59,130,246,0.45)" : T.border}`,
+      background: isCurrentUser ? "color-mix(in srgb, var(--primary) 8%, transparent)" : T.surface,
+      border: `1px solid ${isCurrentUser ? "color-mix(in srgb, var(--primary) 50%, transparent)" : T.border}`,
       backdropFilter: T.blur,
       boxShadow: isCurrentUser ? "0 0 20px rgba(59,130,246,0.1)" : "none",
       marginBottom: 6,
@@ -73,7 +73,7 @@ export function LeaderboardRow({ rank, participant, points, maxPoints, isCurrent
             <span style={{ fontSize: 9, padding: "1px 5px", borderRadius: 4, background: "rgba(59,130,246,0.15)", color: T.primary, fontWeight: 700 }}>VOCÊ</span>
           )}
         </div>
-        <div style={{ width: "100%", height: 3, background: "rgba(255,255,255,0.07)", borderRadius: 2 }}>
+        <div style={{ width: "100%", height: 3, background: "var(--divider)", borderRadius: 2 }}>
           <div style={{ width: `${barWidth}%`, height: "100%", background: T.primary, borderRadius: 2, transition: "width 0.3s" }} />
         </div>
       </div>

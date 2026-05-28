@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { T } from "../theme";
 import { TeamCrest } from "./TeamCrest";
 
 function ScoreInput({ value, onChange, disabled, label }) {
@@ -21,10 +20,10 @@ function ScoreInput({ value, onChange, disabled, label }) {
         textAlign: "center",
         fontSize: 22,
         fontWeight: 800,
-        background: disabled ? "rgba(255,255,255,0.03)" : "rgba(59,130,246,0.08)",
-        border: `2px solid ${focused ? T.primary : disabled ? "rgba(255,255,255,0.08)" : T.border}`,
+        background: disabled ? "var(--surface)" : "color-mix(in srgb, var(--primary) 10%, transparent)",
+        border: `2px solid ${focused ? "var(--primary)" : disabled ? "rgba(255,255,255,0.08)" : "var(--border)"}`,
         borderRadius: 10,
-        color: T.text,
+        color: "var(--text)",
         outline: "none",
         fontFamily: "'DM Mono', monospace",
         cursor: disabled ? "default" : "text",
@@ -37,15 +36,15 @@ export function MatchCard({ match, hVal, aVal, onH, onA, disabled, pts }) {
   if (!match) return null;
   const hasResult = hVal !== "" && hVal !== undefined && aVal !== "" && aVal !== undefined;
   const borderColor =
-    pts === 3 ? "rgba(34,197,94,0.4)" :
-    pts === 1 ? "rgba(59,130,246,0.4)" :
-    pts === 0 && hasResult ? "rgba(248,113,113,0.3)" :
-    T.border;
+    pts === 3 ? "color-mix(in srgb, var(--green) 50%, transparent)" :
+    pts === 1 ? "color-mix(in srgb, var(--primary) 50%, transparent)" :
+    pts === 0 && hasResult ? "color-mix(in srgb, var(--red) 40%, transparent)" :
+    "var(--border)";
   const bgColor =
-    pts === 3 ? "rgba(34,197,94,0.06)" :
-    pts === 1 ? "rgba(59,130,246,0.06)" :
-    pts === 0 && hasResult ? "rgba(248,113,113,0.04)" :
-    T.surface;
+    pts === 3 ? "color-mix(in srgb, var(--green) 8%, transparent)" :
+    pts === 1 ? "color-mix(in srgb, var(--primary) 8%, transparent)" :
+    pts === 0 && hasResult ? "color-mix(in srgb, var(--red) 6%, transparent)" :
+    "var(--surface)";
 
   return (
     <div style={{
@@ -57,12 +56,12 @@ export function MatchCard({ match, hVal, aVal, onH, onA, disabled, pts }) {
       borderRadius: 12,
       background: bgColor,
       border: `1px solid ${borderColor}`,
-      backdropFilter: T.blur,
+      backdropFilter: "var(--blur)",
       marginBottom: 8,
     }}>
       {/* Home */}
       <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8, minWidth: 0 }}>
-        <span style={{ color: T.text, fontWeight: 700, fontSize: 12, textAlign: "right", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <span style={{ color: "var(--text)", fontWeight: 700, fontSize: 12, textAlign: "right", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {match.home}
         </span>
         <TeamCrest team={match.home} size={36} />
@@ -71,14 +70,14 @@ export function MatchCard({ match, hVal, aVal, onH, onA, disabled, pts }) {
       {/* Score */}
       <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
         <ScoreInput value={hVal} onChange={onH} disabled={disabled} label={`Gols ${match.home}`} />
-        <span style={{ color: T.muted, fontSize: 16, fontWeight: 900 }}>–</span>
+        <span style={{ color: "var(--text-muted)", fontSize: 16, fontWeight: 900 }}>–</span>
         <ScoreInput value={aVal} onChange={onA} disabled={disabled} label={`Gols ${match.away}`} />
       </div>
 
       {/* Away */}
       <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
         <TeamCrest team={match.away} size={36} />
-        <span style={{ color: T.text, fontWeight: 700, fontSize: 12, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <span style={{ color: "var(--text)", fontWeight: 700, fontSize: 12, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {match.away}
         </span>
       </div>
@@ -90,7 +89,7 @@ export function MatchCard({ match, hVal, aVal, onH, onA, disabled, pts }) {
           width: 22, height: 22, borderRadius: "50%",
           display: "flex", alignItems: "center", justifyContent: "center",
           fontSize: 9, fontWeight: 800,
-          background: pts === 3 ? T.green : pts === 1 ? T.primary : T.red,
+          background: pts === 3 ? "var(--green)" : pts === 1 ? "var(--primary)" : "var(--red)",
           color: "#fff",
         }}>
           +{pts}
