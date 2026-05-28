@@ -771,6 +771,7 @@ export default function App() {
   });
 
   const { data, loading, notFound, write, createCampeonato, findByCode, joinCampeonato } = useCampeonato(campeonatoId, firebaseUser);
+  const { rules } = useRules(campeonatoId);
 
   const [view, setView] = useState("home");
   const [activePart, setActivePart] = useState(null);
@@ -840,13 +841,20 @@ export default function App() {
     participants.map(p => {
       let pts = 0, exact = 0, correct = 0;
       ALL_MATCHES.forEach(m => {
-        const mp = calcPoints(predictions[p.uid]?.[m.id], results[m.id]);
-        if (mp === 3) { pts += 3; exact++; }
-        else if (mp === 1) { pts += 1; correct++; }
+        const mp = calcPoints(predictions[p.uid]?.[m.id], results[m.id], rules);
+        if (mp > 0) {
+          pts += mp;
+          const ph = parseInt(predictions[p.uid]?.[m.id]?.home);
+          const pa = parseInt(predictions[p.uid]?.[m.id]?.away);
+          const ah = parseInt(results[m.id]?.home);
+          const aa = parseInt(results[m.id]?.away);
+          if (ph === ah && pa === aa) exact++;
+          else correct++;
+        }
       });
       return { ...p, id: p.uid, pts, exact, correct };
     }).sort((a, b) => b.pts - a.pts),
-  [participants, predictions, results]);
+  [participants, predictions, results, rules]);
 
   const allStandings = useMemo(() => {
     const s = {};
@@ -966,12 +974,12 @@ export default function App() {
       </header>
       <main style={{ position:"relative",zIndex:1,paddingTop:26,paddingBottom:120 }}>
         {view==="home"&&<HomeView participants={participants} newName={newName} setNewName={setNewName} addParticipant={addParticipant} removeParticipant={removeParticipant} predictions={predictions} results={results} leaderboard={leaderboard} setView={setView} poolConfig={poolConfig} currentUser={currentUser} campeonatoId={campeonatoId} inviteCode={data?.pool?.inviteCode}/>}
-        {view==="predictions"&&<PredictionsView participants={participants} activePart={activePart} setActivePart={setActivePart} predictions={predictions} updatePrediction={updatePrediction} results={results} currentUser={currentUser}/>}
-        {view==="results"&&<ResultsView results={results} updateResult={updateResult} currentUser={currentUser}/>}
+        {view==="predictions"&&<PredictionsView participants={participants} activePart={activePart} setActivePart={setActivePart} predictions={predictions} updatePrediction={updatePrediction} results={results} currentUser={currentUser} rules={rules}/>}
+        {view==="results"&&<ResultsView results={results} updateResult={updateResult} currentUser={currentUser} rules={rules} write={write} campeonatoId={campeonatoId}/>}
         {view==="groups"&&<GroupsView allStandings={allStandings}/>}
         {view==="knockout"&&<KnockoutView koMatches={koMatches} updateKOMatch={updateKOMatch} currentUser={currentUser}/>}
         {view==="leaderboard"&&<LeaderboardView leaderboard={leaderboard} predictions={predictions} results={results}/>}
-        {view==="config"&&<ConfigView poolConfig={poolConfig} updatePoolConfig={updatePoolConfig} participants={participants} currentUser={currentUser} campeonatoId={campeonatoId} inviteCode={data?.pool?.inviteCode}/>}
+        {view==="config"&&<ConfigView poolConfig={poolConfig} updatePoolConfig={updatePoolConfig} participants={participants} currentUser={currentUser} campeonatoId={campeonatoId} inviteCode={data?.pool?.inviteCode} rules={rules} write={write}/>}
       </main>
       {/* Banner fixo rodapé */}
       <div style={{
