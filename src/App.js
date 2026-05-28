@@ -658,7 +658,7 @@ function ConfigView({poolConfig,updatePoolConfig,participants,currentUser,campeo
         👀 Somente o administrador <strong>{participants.find(p=>p.isAdmin)?.name}</strong> pode editar.
       </div>}
       <div style={{display:"flex",gap:6,marginBottom:20,flexWrap:"wrap"}}>
-        {tabs.map(t=><button key={t.id} onClick={()=>setTab(t.id)} style={{padding:"8px 15px",borderRadius:8,border:"none",background:tab===t.id?T.gold:"rgba(255,255,255,.06)",color:tab===t.id?"#000":T.sub,fontWeight:tab===t.id?700:500,cursor:"pointer",fontSize:13,fontFamily:"inherit"}}>{t.label}</button>)}
+        {tabs.map(t=><button key={t.id} onClick={()=>setTab(t.id)} style={{padding:"8px 15px",borderRadius:8,border:tab===t.id?"none":"1px solid "+T.border,background:tab===t.id?T.primary:T.surface,color:tab===t.id?"#fff":T.sub,fontWeight:tab===t.id?700:500,cursor:"pointer",fontSize:13,fontFamily:"inherit"}}>{t.label}</button>)}
       </div>
 
       {tab==="pool"&&(
@@ -669,9 +669,9 @@ function ConfigView({poolConfig,updatePoolConfig,participants,currentUser,campeo
             <h4 style={{color:T.sub,fontSize:10,margin:"0 0 11px",textTransform:"uppercase",letterSpacing:.8,fontWeight:700}}>Participantes ({participants.length})</h4>
             <div style={{display:"flex",flexDirection:"column",gap:7}}>
               {participants.map(p=>(
-                <div key={p.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 13px",borderRadius:10,background:p.isAdmin?"rgba(245,197,24,.05)":"rgba(255,255,255,.03)",border:`1px solid ${p.isAdmin?"rgba(245,197,24,.2)":T.border}`}}>
-                  <div style={{display:"flex",alignItems:"center",gap:9}}><Avatar user={p} size={34}/><div><div style={{color:T.text,fontWeight:600,fontSize:13}}>{p.name}</div><div style={{fontSize:10,color:p.isAdmin?T.gold:T.muted,marginTop:1}}>{p.isAdmin?"Administrador · ":""}{p.email||`Entrou em ${new Date(p.id).toLocaleDateString("pt-BR")}`}</div></div></div>
-                  {p.isAdmin&&<Tag color={T.gold}>Admin</Tag>}
+                <div key={p.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 13px",borderRadius:10,background:p.isAdmin?"rgba(59,130,246,.05)":"rgba(255,255,255,.03)",border:`1px solid ${p.isAdmin?"rgba(59,130,246,.3)":T.border}`}}>
+                  <div style={{display:"flex",alignItems:"center",gap:9}}><Avatar user={p} size={34}/><div><div style={{color:T.text,fontWeight:600,fontSize:13}}>{p.name}</div><div style={{fontSize:10,color:p.isAdmin?T.primaryLight:T.muted,marginTop:1}}>{p.isAdmin?"Administrador · ":""}{p.email||`Entrou em ${new Date(p.id).toLocaleDateString("pt-BR")}`}</div></div></div>
+                  {p.isAdmin&&<Tag color={T.primary}>Admin</Tag>}
                 </div>
               ))}
             </div>
@@ -683,7 +683,7 @@ function ConfigView({poolConfig,updatePoolConfig,participants,currentUser,campeo
           <h3 style={{color:T.text,fontWeight:700,fontSize:15,margin:"0 0 16px"}}>🔗 Convite</h3>
           <div style={{marginBottom:14}}>
             <div style={{color:T.muted,fontSize:10,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>Código de acesso</div>
-            <div style={{fontFamily:"monospace",fontSize:28,fontWeight:800,color:T.gold,letterSpacing:6}}>{inviteCode}</div>
+            <div style={{fontFamily:"monospace",fontSize:22,fontWeight:800,color:T.primaryLight,letterSpacing:4}}>{inviteCode}</div>
           </div>
           <div>
             <div style={{color:T.muted,fontSize:10,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>Link direto</div>
@@ -705,7 +705,7 @@ function UserMenu({currentUser,onSwitch,onLogout}){
   if(!currentUser) return null;
   return(
     <div style={{position:"relative"}}>
-      <div onClick={()=>setOpen(!open)} style={{display:"flex",alignItems:"center",gap:7,padding:"4px 10px 4px 5px",borderRadius:20,background:"rgba(255,255,255,.07)",border:`1px solid ${T.border}`,cursor:"pointer",userSelect:"none"}}>
+      <div onClick={()=>setOpen(!open)} style={{display:"flex",alignItems:"center",gap:7,padding:"6px 10px",borderRadius:10,background:T.surface,border:"1px solid "+T.border,cursor:"pointer",userSelect:"none",fontFamily:"inherit",color:T.text}}>
         <Avatar user={currentUser} size={28}/>
         <span style={{color:T.text,fontSize:12,fontWeight:600,maxWidth:100,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{currentUser.name}</span>
         {currentUser.isAdmin&&<span style={{fontSize:13}}>👑</span>}
@@ -714,11 +714,11 @@ function UserMenu({currentUser,onSwitch,onLogout}){
       {open&&(
         <>
           <div onClick={()=>setOpen(false)} style={{position:"fixed",inset:0,zIndex:199}}/>
-          <div style={{position:"absolute",right:0,top:"calc(100% + 6px)",background:"rgba(12,16,30,.98)",border:`1px solid ${T.border}`,borderRadius:12,padding:8,minWidth:200,zIndex:200,backdropFilter:"blur(20px)",boxShadow:"0 8px 40px rgba(0,0,0,.6)"}}>
+          <div style={{position:"absolute",right:0,top:"calc(100% + 6px)",background:"#0D1525",border:"1px solid rgba(59,130,246,.2)",borderRadius:12,padding:8,minWidth:200,zIndex:200,backdropFilter:"blur(20px)",boxShadow:"0 8px 32px rgba(0,0,0,.5)"}}>
             <div style={{padding:"8px 12px",borderBottom:`1px solid ${T.border}`,marginBottom:6}}>
               <div style={{color:T.text,fontWeight:700,fontSize:13}}>{currentUser.name}</div>
               {currentUser.email&&<div style={{color:T.muted,fontSize:11,marginTop:1}}>{currentUser.email}</div>}
-              <div style={{fontSize:10,color:currentUser.isAdmin?T.gold:T.muted,marginTop:2}}>{currentUser.isAdmin?"👑 Administrador":"Participante"}</div>
+              <div style={{fontSize:10,color:currentUser.isAdmin?T.primaryLight:T.muted,marginTop:2}}>{currentUser.isAdmin?"👑 Administrador":"Participante"}</div>
             </div>
             <button onClick={()=>{setOpen(false);onSwitch();}} style={{width:"100%",padding:"8px 12px",borderRadius:8,border:"none",background:"transparent",color:T.sub,cursor:"pointer",fontSize:13,fontFamily:"inherit",textAlign:"left",transition:"all .15s"}} onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,.06)"} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>🔄 Trocar usuário</button>
             <button onClick={()=>{setOpen(false);onLogout();}} style={{width:"100%",padding:"8px 12px",borderRadius:8,border:"none",background:"transparent",color:T.red,cursor:"pointer",fontSize:13,fontFamily:"inherit",textAlign:"left",transition:"all .15s"}} onMouseEnter={e=>e.currentTarget.style.background="rgba(248,113,113,.08)"} onMouseLeave={e=>e.currentTarget.style.background="transparent"}>🚪 Sair</button>
