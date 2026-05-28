@@ -4,6 +4,11 @@ import { useCampeonato } from "./hooks/useCampeonato";
 import { AuthModal } from "./components/AuthModal";
 import { CampeonatoGate } from "./components/CampeonatoGate";
 import { AdSlot } from "./components/AdSlot";
+import { T, card, inp } from "./theme";
+import { TeamCrest } from "./components/TeamCrest";
+import { MatchCard } from "./components/MatchCard";
+import { SectionHeader } from "./components/SectionHeader";
+import { LeaderboardRow } from "./components/LeaderboardRow";
 
 // ═══════════════════════════════════════════════════
 //  DATA  (same 48 seleções, 12 grupos, 72 jogos)
@@ -119,60 +124,12 @@ function groupStandings(key,results){
 }
 
 // ═══════════════════════════════════════════════════
-//  TOKENS
-// ═══════════════════════════════════════════════════
-const T={
-  bg:"#070a14",surface:"rgba(255,255,255,0.035)",border:"rgba(255,255,255,0.07)",
-  gold:"#f5c518",green:"#22c55e",blue:"#60a5fa",red:"#f87171",purple:"#a78bfa",
-  text:"#e2e8f0",sub:"#94a3b8",muted:"#475569",
-};
-const card={background:T.surface,border:`1px solid ${T.border}`,borderRadius:18,padding:"24px 28px",backdropFilter:"blur(12px)"};
-const inp=(extra={})=>({
-  width:"100%",padding:"11px 14px",borderRadius:10,boxSizing:"border-box",
-  border:`1px solid rgba(245,197,24,.3)`,background:"rgba(255,255,255,.05)",
-  color:T.text,fontSize:14,outline:"none",fontFamily:"inherit",...extra,
-});
-
-// ═══════════════════════════════════════════════════
 //  BASE COMPONENTS
 // ═══════════════════════════════════════════════════
 function Avatar({user,size=32}){
   if(!user) return null;
   if(user.picture) return <img src={user.picture} referrerPolicy="no-referrer" alt={user.name} style={{width:size,height:size,borderRadius:"50%",objectFit:"cover",border:`2px solid ${T.gold}`,flexShrink:0}}/>;
   return <div style={{width:size,height:size,borderRadius:"50%",background:user.isAdmin?"rgba(245,197,24,.2)":"rgba(255,255,255,.1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:size*0.45,flexShrink:0,border:`2px solid ${user.isAdmin?T.gold:"rgba(255,255,255,.2)"}`}}>{user.isAdmin?"👑":"👤"}</div>;
-}
-function ScoreBox({value,onChange,disabled}){
-  return <input type="number" min="0" max="20" value={value??""} onChange={e=>onChange(e.target.value)} disabled={disabled}
-    style={{width:48,height:44,textAlign:"center",fontSize:20,fontWeight:800,
-      background:disabled?"rgba(255,255,255,.04)":"rgba(245,197,24,.07)",
-      border:`2px solid ${disabled?"rgba(255,255,255,.08)":"rgba(245,197,24,.35)"}`,
-      borderRadius:10,color:T.text,outline:"none",fontFamily:"'DM Mono',monospace"}}/>;
-}
-function MatchCard({match,hVal,aVal,onH,onA,disabled,pts}){
-  const scored=hVal!==""&&hVal!==undefined&&aVal!==""&&aVal!==undefined;
-  const bg=pts===3?"rgba(34,197,94,.09)":pts===1?"rgba(96,165,250,.09)":pts===0&&scored?"rgba(248,113,113,.06)":"rgba(255,255,255,.025)";
-  const bd=pts===3?"rgba(34,197,94,.25)":pts===1?"rgba(96,165,250,.25)":"rgba(255,255,255,.06)";
-  return(
-    <div style={{display:"flex",alignItems:"center",gap:8,padding:"11px 14px",borderRadius:12,background:bg,border:`1px solid ${bd}`,marginBottom:7}}>
-      <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"flex-end",gap:6,minWidth:0}}>
-        <span style={{color:T.text,fontWeight:700,fontSize:12,textAlign:"right",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{match.home}</span>
-        <span style={{fontSize:20,flexShrink:0}}>{FLAGS[match.home]||"🏳️"}</span>
-      </div>
-      <div style={{display:"flex",alignItems:"center",gap:5,flexShrink:0}}>
-        <ScoreBox value={hVal} onChange={onH} disabled={disabled}/>
-        <span style={{color:T.muted,fontSize:15,fontWeight:900}}>–</span>
-        <ScoreBox value={aVal} onChange={onA} disabled={disabled}/>
-      </div>
-      <div style={{flex:1,display:"flex",alignItems:"center",gap:6,minWidth:0}}>
-        <span style={{fontSize:20,flexShrink:0}}>{FLAGS[match.away]||"🏳️"}</span>
-        <span style={{color:T.text,fontWeight:700,fontSize:12,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{match.away}</span>
-      </div>
-      {pts!==null&&<div style={{width:30,height:30,borderRadius:"50%",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:800,background:pts===3?T.green:pts===1?T.blue:T.red,color:"#fff"}}>+{pts}</div>}
-    </div>
-  );
-}
-function SectionTitle({children,sub}){
-  return <div style={{marginBottom:24}}><h2 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"clamp(28px,4.5vw,44px)",color:T.gold,letterSpacing:4,margin:0,lineHeight:1}}>{children}</h2>{sub&&<p style={{color:T.sub,fontSize:13,marginTop:5}}>{sub}</p>}</div>;
 }
 function Tag({children,color=T.green}){
   return <span style={{fontSize:11,fontWeight:700,padding:"3px 9px",borderRadius:20,background:`${color}18`,color,letterSpacing:.4}}>{children}</span>;
@@ -271,14 +228,14 @@ function HomeView({participants,newName,setNewName,addParticipant,removeParticip
         <div style={{display:"flex",flexWrap:"wrap",gap:12}}>
           {[{pts:3,ico:"🎯",txt:"Placar exato"},{pts:1,ico:"✅",txt:"Resultado correto (V/E/D)"},{pts:0,ico:"❌",txt:"Resultado errado"}].map(r=>(
             <div key={r.pts} style={{display:"flex",alignItems:"center",gap:7}}>
-              <div style={{width:30,height:30,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:12,background:r.pts===3?`${T.green}20`:r.pts===1?`${T.blue}20`:`${T.red}20`,color:r.pts===3?T.green:r.pts===1?T.blue:T.red}}>+{r.pts}</div>
+              <div style={{width:30,height:30,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:12,background:r.pts===3?`${T.green}20`:r.pts===1?`${T.primaryLight}20`:`${T.red}20`,color:r.pts===3?T.green:r.pts===1?T.primaryLight:T.red}}>+{r.pts}</div>
               <span style={{color:T.sub,fontSize:12}}>{r.ico} {r.txt}</span>
             </div>
           ))}
         </div>
       </div>
       <div style={{padding:"12px 16px",borderRadius:10,background:"rgba(96,165,250,.08)",
-        border:"1px solid rgba(96,165,250,.2)",fontSize:12,color:T.blue,
+        border:"1px solid rgba(96,165,250,.2)",fontSize:12,color:T.primaryLight,
         textAlign:"center",lineHeight:1.6,marginBottom:32}}>
         💙 <strong>Palpitômetro é 100% gratuito e sem fins lucrativos.</strong>{" "}
         Nenhuma taxa, nenhuma cobrança. Apenas diversão!{" "}
@@ -314,7 +271,7 @@ function PredictionsView({participants,activePart,setActivePart,predictions,upda
   if(participants.length===0) return <div style={{textAlign:"center",padding:"80px 20px",color:T.muted}}><div style={{fontSize:48,marginBottom:12}}>👥</div><p>Adicione participantes primeiro.</p></div>;
   if(!activePart) return(
     <div style={{maxWidth:720,margin:"0 auto",padding:"0 20px"}}>
-      <SectionTitle sub="Selecione um participante para registrar palpites">PALPITES</SectionTitle>
+      <SectionHeader title="PALPITES" subtitle="Selecione um participante para registrar palpites" />
       <div style={{display:"flex",flexDirection:"column",gap:9}}>
         {participants.map(p=>{
           const predCount=Object.values(predictions[p.id]||{}).filter(pr=>pr?.home!==undefined&&pr?.home!=="").length;
@@ -343,7 +300,7 @@ function PredictionsView({participants,activePart,setActivePart,predictions,upda
         <div style={{display:"flex",alignItems:"center",gap:10}}><Avatar user={p} size={40}/><div><h2 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:28,color:T.gold,letterSpacing:3,margin:0,lineHeight:1}}>PALPITES: {p.name.toUpperCase()}</h2><p style={{color:T.sub,fontSize:11,margin:"2px 0 0"}}>{totalPts} pts acumulados · 72 jogos</p></div></div>
       </div>
       <div style={{display:"flex",gap:8,padding:"9px 13px",background:"rgba(245,197,24,.05)",border:"1px solid rgba(245,197,24,.16)",borderRadius:9,marginBottom:18,flexWrap:"wrap",alignItems:"center"}}>
-        {[{pts:3,c:T.green,txt:"Exato"},{pts:1,c:T.blue,txt:"Resultado"},{pts:0,c:T.red,txt:"Errado"}].map(r=>(
+        {[{pts:3,c:T.green,txt:"Exato"},{pts:1,c:T.primaryLight,txt:"Resultado"},{pts:0,c:T.red,txt:"Errado"}].map(r=>(
           <span key={r.pts} style={{fontSize:11,color:T.sub,display:"flex",alignItems:"center",gap:4}}><span style={{width:18,height:18,borderRadius:"50%",background:r.c,color:"#fff",fontSize:9,fontWeight:800,display:"inline-flex",alignItems:"center",justifyContent:"center"}}>+{r.pts}</span>{r.txt}</span>
         ))}
         <span style={{fontSize:10,color:T.muted,marginLeft:"auto"}}>▲▼ para expandir/recolher</span>
@@ -387,8 +344,8 @@ function ResultsView({results,updateResult,currentUser}){
   const isAdmin=currentUser?.isAdmin;
   return(
     <div style={{maxWidth:820,margin:"0 auto",padding:"0 20px"}}>
-      <SectionTitle sub={isAdmin?"Insira os placares reais — pontos calculados automaticamente":"Somente o admin pode inserir resultados"}>RESULTADOS REAIS</SectionTitle>
-      {!isAdmin&&<div style={{padding:"9px 14px",borderRadius:9,marginBottom:14,background:"rgba(167,139,250,.08)",border:"1px solid rgba(167,139,250,.2)",fontSize:12,color:T.purple}}>👀 Modo visualização — somente o admin insere os resultados.</div>}
+      <SectionHeader title="RESULTADOS REAIS" subtitle={isAdmin?"Insira os placares reais — pontos calculados automaticamente":"Somente o admin pode inserir resultados"} />
+      {!isAdmin&&<div style={{padding:"9px 14px",borderRadius:9,marginBottom:14,background:"rgba(167,139,250,.08)",border:"1px solid rgba(167,139,250,.2)",fontSize:12,color:T.primaryLight}}>👀 Modo visualização — somente o admin insere os resultados.</div>}
       <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20,padding:"12px 16px",background:"rgba(34,197,94,.06)",border:"1px solid rgba(34,197,94,.2)",borderRadius:10}}>
         <div style={{fontSize:22}}>⚽</div>
         <div><div style={{color:T.text,fontWeight:600,fontSize:13}}>{done} de {ALL_MATCHES.length} jogos com resultado</div>
@@ -422,7 +379,7 @@ function ResultsView({results,updateResult,currentUser}){
 function GroupsView({allStandings}){
   return(
     <div style={{maxWidth:1100,margin:"0 auto",padding:"0 20px"}}>
-      <SectionTitle sub="12 grupos · 2 primeiros + 8 melhores terceiros avançam">FASE DE GRUPOS</SectionTitle>
+      <SectionHeader title="FASE DE GRUPOS" subtitle="12 grupos · 2 primeiros + 8 melhores terceiros avançam" />
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(310px,1fr))",gap:14}}>
         {Object.entries(allStandings).map(([key,st])=>(
           <div key={key} style={card}>
@@ -464,6 +421,13 @@ function GroupsView({allStandings}){
 // ═══════════════════════════════════════════════════
 //  KNOCKOUT VIEW
 // ═══════════════════════════════════════════════════
+function ScoreBox({value,onChange,disabled}){
+  return <input type="number" min="0" max="20" value={value??""} onChange={e=>onChange(e.target.value)} disabled={disabled}
+    style={{width:48,height:44,textAlign:"center",fontSize:20,fontWeight:800,
+      background:disabled?"rgba(255,255,255,.04)":"rgba(245,197,24,.07)",
+      border:`2px solid ${disabled?"rgba(255,255,255,.08)":"rgba(245,197,24,.35)"}`,
+      borderRadius:10,color:T.text,outline:"none",fontFamily:"'DM Mono',monospace"}}/>;
+}
 function KnockoutView({koMatches,updateKOMatch,currentUser}){
   const [tab,setTab]=useState("r32");
   const isAdmin=currentUser?.isAdmin;
@@ -516,8 +480,8 @@ function KnockoutView({koMatches,updateKOMatch,currentUser}){
   }
   return(
     <div style={{maxWidth:1000,margin:"0 auto",padding:"0 20px"}}>
-      <SectionTitle sub="48 equipes → 32 classificados → 16avos de final">MATA-MATA</SectionTitle>
-      {!isAdmin&&<div style={{padding:"9px 13px",borderRadius:9,marginBottom:16,background:"rgba(167,139,250,.08)",border:"1px solid rgba(167,139,250,.2)",fontSize:12,color:T.purple}}>👀 Somente o admin pode inserir times e resultados.</div>}
+      <SectionHeader title="MATA-MATA" subtitle="48 equipes → 32 classificados → 16avos de final" />
+      {!isAdmin&&<div style={{padding:"9px 13px",borderRadius:9,marginBottom:16,background:"rgba(167,139,250,.08)",border:"1px solid rgba(167,139,250,.2)",fontSize:12,color:T.primaryLight}}>👀 Somente o admin pode inserir times e resultados.</div>}
       {champion&&<div style={{textAlign:"center",padding:"24px",marginBottom:24,background:"linear-gradient(135deg,rgba(245,197,24,.12),rgba(245,197,24,.03))",border:`2px solid ${T.gold}`,borderRadius:18,boxShadow:"0 0 60px rgba(245,197,24,.15)"}}><div style={{fontSize:54,filter:"drop-shadow(0 0 20px rgba(245,197,24,.5))"}}>🏆</div><div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:44,color:T.gold,letterSpacing:6,lineHeight:1,marginTop:6}}>CAMPEÃO DO MUNDO</div><div style={{color:T.text,fontSize:24,fontWeight:800,marginTop:5}}>{FLAGS[champion]||"🏳️"} {champion}</div></div>}
       <div style={{display:"flex",gap:5,marginBottom:20,flexWrap:"wrap"}}>
         {ROUNDS.map(r=><button key={r.id} onClick={()=>setTab(r.id)} style={{padding:"8px 13px",borderRadius:8,border:"none",background:tab===r.id?T.gold:"rgba(255,255,255,.06)",color:tab===r.id?"#000":T.sub,fontWeight:tab===r.id?700:500,cursor:"pointer",fontSize:12,fontFamily:"inherit",display:"flex",flexDirection:"column",alignItems:"center",gap:1}}><span>{r.ico} {r.label}</span><span style={{fontSize:8,opacity:.7}}>{r.dates}</span></button>)}
@@ -539,12 +503,12 @@ function LeaderboardView({leaderboard,predictions,results}){
   const breakdown=sel?ALL_MATCHES.map(m=>({...m,pred:predictions[sel.id]?.[m.id],actual:results[m.id],pts:calcPoints(predictions[sel.id]?.[m.id],results[m.id])})):[];
   return(
     <div style={{maxWidth:820,margin:"0 auto",padding:"0 20px"}}>
-      <SectionTitle sub="Ranking completo · Máx. 216 pts (72 jogos × 3)">RANKING DO PALPITÔMETRO</SectionTitle>
+      <SectionHeader title="RANKING DO PALPITÔMETRO" subtitle="Ranking completo · Máx. 216 pts (72 jogos × 3)" />
       {leaderboard[0]?.pts>0&&<div style={{...card,textAlign:"center",padding:"26px",marginBottom:20,background:"linear-gradient(135deg,rgba(245,197,24,.1),rgba(245,197,24,.02))",border:"1px solid rgba(245,197,24,.3)"}}>
         <Avatar user={leaderboard[0]} size={64}/><div style={{marginTop:8}}/>
         <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:40,color:T.gold,letterSpacing:4,marginTop:6,lineHeight:1}}>{leaderboard[0].name.toUpperCase()}</div>
         <div style={{color:T.text,fontSize:28,fontWeight:800,marginTop:3}}>{leaderboard[0].pts} pts</div>
-        <div style={{display:"flex",justifyContent:"center",gap:8,marginTop:8}}><Tag color={T.green}>🎯 {leaderboard[0].exact} exatos</Tag><Tag color={T.blue}>✓ {leaderboard[0].correct} corretos</Tag></div>
+        <div style={{display:"flex",justifyContent:"center",gap:8,marginTop:8}}><Tag color={T.green}>🎯 {leaderboard[0].exact} exatos</Tag><Tag color={T.primaryLight}>✓ {leaderboard[0].correct} corretos</Tag></div>
       </div>}
       <div style={{display:"flex",flexDirection:"column",gap:7,marginBottom:20}}>
         {leaderboard.map((p,i)=>(
@@ -553,8 +517,8 @@ function LeaderboardView({leaderboard,predictions,results}){
               <div style={{fontSize:22,minWidth:30,textAlign:"center"}}>{i<3?medals[i]:<span style={{color:T.muted,fontWeight:700,fontSize:13}}>{i+1}º</span>}</div>
               <Avatar user={p} size={38}/>
               <div style={{flex:1}}>
-                <div style={{display:"flex",alignItems:"center",gap:6}}><span style={{color:T.text,fontWeight:700,fontSize:14}}>{p.name}</span>{p.isAdmin&&<Tag color={T.purple}>👑 Admin</Tag>}{p.email&&<span style={{fontSize:10,color:T.muted}}>· {p.email}</span>}</div>
-                <div style={{display:"flex",gap:6,marginTop:4,flexWrap:"wrap"}}><Tag color={T.green}>🎯 {p.exact} exatos</Tag><Tag color={T.blue}>✓ {p.correct} corretos</Tag></div>
+                <div style={{display:"flex",alignItems:"center",gap:6}}><span style={{color:T.text,fontWeight:700,fontSize:14}}>{p.name}</span>{p.isAdmin&&<Tag color={T.primaryLight}>👑 Admin</Tag>}{p.email&&<span style={{fontSize:10,color:T.muted}}>· {p.email}</span>}</div>
+                <div style={{display:"flex",gap:6,marginTop:4,flexWrap:"wrap"}}><Tag color={T.green}>🎯 {p.exact} exatos</Tag><Tag color={T.primaryLight}>✓ {p.correct} corretos</Tag></div>
               </div>
               <div style={{textAlign:"right"}}><div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:i===0?34:26,color:i===0?T.gold:T.text,lineHeight:1,letterSpacing:1}}>{p.pts}</div><div style={{color:T.muted,fontSize:9}}>PTS</div></div>
             </div>
@@ -565,7 +529,7 @@ function LeaderboardView({leaderboard,predictions,results}){
                 return <div key={gKey} style={{marginBottom:7}}>
                   <div style={{fontSize:10,color:T.muted,fontWeight:700,marginBottom:4}}>Grupo {gKey} — {gPts} pts</div>
                   <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))",gap:4}}>
-                    {gData.matches.map(m=>{const bm=breakdown.find(x=>x.id===m.id);const hasPred=bm?.pred?.home!==undefined&&bm?.pred?.home!=="";const hasAct=bm?.actual?.home!==undefined&&bm?.actual?.home!=="";return <div key={m.id} style={{padding:"5px 7px",borderRadius:6,fontSize:10,background:bm?.pts===3?"rgba(34,197,94,.08)":bm?.pts===1?"rgba(96,165,250,.08)":bm?.pts===0&&hasAct?"rgba(248,113,113,.06)":"rgba(255,255,255,.03)",border:`1px solid ${bm?.pts===3?"rgba(34,197,94,.2)":bm?.pts===1?"rgba(96,165,250,.2)":"rgba(255,255,255,.05)"}`}}><div style={{display:"flex",justifyContent:"space-between"}}><span style={{color:T.sub}}>{FLAGS[m.home]||"🏳️"} vs {FLAGS[m.away]||"🏳️"}</span>{bm?.pts!==null&&bm?.pts!==undefined&&<span style={{width:14,height:14,borderRadius:"50%",background:bm.pts===3?T.green:bm.pts===1?T.blue:T.red,color:"#fff",fontSize:7,fontWeight:800,display:"inline-flex",alignItems:"center",justifyContent:"center"}}>+{bm.pts}</span>}</div><div style={{display:"flex",gap:5,marginTop:2,flexWrap:"wrap"}}>{hasPred&&<span style={{color:T.muted}}>P:<strong style={{color:T.text}}>{bm.pred.home}–{bm.pred.away}</strong></span>}{hasAct&&<span style={{color:T.muted}}>R:<strong style={{color:T.text}}>{bm.actual.home}–{bm.actual.away}</strong></span>}{!hasPred&&<span style={{color:T.muted,fontStyle:"italic"}}>–</span>}</div></div>;})}
+                    {gData.matches.map(m=>{const bm=breakdown.find(x=>x.id===m.id);const hasPred=bm?.pred?.home!==undefined&&bm?.pred?.home!=="";const hasAct=bm?.actual?.home!==undefined&&bm?.actual?.home!=="";return <div key={m.id} style={{padding:"5px 7px",borderRadius:6,fontSize:10,background:bm?.pts===3?"rgba(34,197,94,.08)":bm?.pts===1?"rgba(96,165,250,.08)":bm?.pts===0&&hasAct?"rgba(248,113,113,.06)":"rgba(255,255,255,.03)",border:`1px solid ${bm?.pts===3?"rgba(34,197,94,.2)":bm?.pts===1?"rgba(96,165,250,.2)":"rgba(255,255,255,.05)"}`}}><div style={{display:"flex",justifyContent:"space-between"}}><span style={{color:T.sub}}>{FLAGS[m.home]||"🏳️"} vs {FLAGS[m.away]||"🏳️"}</span>{bm?.pts!==null&&bm?.pts!==undefined&&<span style={{width:14,height:14,borderRadius:"50%",background:bm.pts===3?T.green:bm.pts===1?T.primaryLight:T.red,color:"#fff",fontSize:7,fontWeight:800,display:"inline-flex",alignItems:"center",justifyContent:"center"}}>+{bm.pts}</span>}</div><div style={{display:"flex",gap:5,marginTop:2,flexWrap:"wrap"}}>{hasPred&&<span style={{color:T.muted}}>P:<strong style={{color:T.text}}>{bm.pred.home}–{bm.pred.away}</strong></span>}{hasAct&&<span style={{color:T.muted}}>R:<strong style={{color:T.text}}>{bm.actual.home}–{bm.actual.away}</strong></span>}{!hasPred&&<span style={{color:T.muted,fontStyle:"italic"}}>–</span>}</div></div>;})}
                   </div>
                 </div>;
               })}
@@ -586,8 +550,8 @@ function ConfigView({poolConfig,updatePoolConfig,participants,currentUser,campeo
   const tabs=[{id:"pool",label:"⚙️ Configurações"},{id:"invite",label:"🔗 Convite"}];
   return(
     <div style={{maxWidth:920,margin:"0 auto",padding:"0 20px"}}>
-      <SectionTitle sub={isAdmin?`Administrador: ${currentUser?.name}`:"Visualização — somente o admin edita"}>CONFIGURAÇÕES</SectionTitle>
-      {!isAdmin&&<div style={{padding:"9px 14px",borderRadius:9,marginBottom:16,background:"rgba(167,139,250,.08)",border:"1px solid rgba(167,139,250,.2)",fontSize:12,color:T.purple}}>
+      <SectionHeader title="CONFIGURAÇÕES" subtitle={isAdmin?`Administrador: ${currentUser?.name}`:"Visualização — somente o admin edita"} />
+      {!isAdmin&&<div style={{padding:"9px 14px",borderRadius:9,marginBottom:16,background:"rgba(167,139,250,.08)",border:"1px solid rgba(167,139,250,.2)",fontSize:12,color:T.primaryLight}}>
         👀 Somente o administrador <strong>{participants.find(p=>p.isAdmin)?.name}</strong> pode editar.
       </div>}
       <div style={{display:"flex",gap:6,marginBottom:20,flexWrap:"wrap"}}>
