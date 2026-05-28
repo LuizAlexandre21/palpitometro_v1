@@ -16,6 +16,7 @@ const FLAGS = {
 };
 
 export function TeamCrest({ team, size = 32 }) {
+  if (!team) return null;
   const url = CREST_URLS[team];
   if (!url) {
     return (

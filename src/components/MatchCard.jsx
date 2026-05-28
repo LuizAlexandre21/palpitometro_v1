@@ -2,7 +2,7 @@ import { useState } from "react";
 import { T } from "../theme";
 import { TeamCrest } from "./TeamCrest";
 
-function ScoreInput({ value, onChange, disabled }) {
+function ScoreInput({ value, onChange, disabled, label }) {
   const [focused, setFocused] = useState(false);
   return (
     <input
@@ -12,6 +12,7 @@ function ScoreInput({ value, onChange, disabled }) {
       value={value ?? ""}
       onChange={e => onChange(e.target.value)}
       disabled={disabled}
+      aria-label={label}
       onFocus={() => setFocused(true)}
       onBlur={() => setFocused(false)}
       style={{
@@ -33,6 +34,7 @@ function ScoreInput({ value, onChange, disabled }) {
 }
 
 export function MatchCard({ match, hVal, aVal, onH, onA, disabled, pts }) {
+  if (!match) return null;
   const hasResult = hVal !== "" && hVal !== undefined && aVal !== "" && aVal !== undefined;
   const borderColor =
     pts === 3 ? "rgba(34,197,94,0.4)" :
@@ -68,9 +70,9 @@ export function MatchCard({ match, hVal, aVal, onH, onA, disabled, pts }) {
 
       {/* Score */}
       <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-        <ScoreInput value={hVal} onChange={onH} disabled={disabled} />
+        <ScoreInput value={hVal} onChange={onH} disabled={disabled} label={`Gols ${match.home}`} />
         <span style={{ color: T.muted, fontSize: 16, fontWeight: 900 }}>–</span>
-        <ScoreInput value={aVal} onChange={onA} disabled={disabled} />
+        <ScoreInput value={aVal} onChange={onA} disabled={disabled} label={`Gols ${match.away}`} />
       </div>
 
       {/* Away */}
