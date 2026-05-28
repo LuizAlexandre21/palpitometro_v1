@@ -44,7 +44,7 @@ export function CampeonatoGate({ firebaseUser, onCreateCampeonato, onJoinByCode,
       <div style={{ maxWidth: 420, width: "90%", margin: "0 auto", padding: "40px 20px" }}>
       <div style={{ background: "rgba(13,21,37,.95)", border: "1px solid rgba(59,130,246,.25)", borderRadius: 18, padding: "32px 28px" }}>
         <div style={{ textAlign: "center", marginBottom: 28 }}>
-          <div style={{ fontSize: 58, filter: "drop-shadow(0 0 24px rgba(245,197,24,.5))" }}>🏆</div>
+          <div style={{ fontSize: 58, filter: "drop-shadow(0 0 24px rgba(59,130,246,.4))" }}>🏆</div>
           <h1 style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 32, color: T.text, letterSpacing: 3, margin: "0 0 8px" }}>PALPITÔMETRO</h1>
           <p style={{ color: T.sub, fontSize: 13, margin: "0 0 24px" }}>Copa do Mundo 2026 · Olá, {firebaseUser.displayName || firebaseUser.email}</p>
         </div>
