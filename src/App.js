@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useRules, DEFAULT_RULES } from "./hooks/useRules";
 import { useAuth } from "./hooks/useAuth";
 import { useCampeonato } from "./hooks/useCampeonato";
 import { AuthModal } from "./components/AuthModal";
@@ -98,13 +99,44 @@ const ALL_MATCHES = Object.entries(GROUPS).flatMap(([g,d])=>d.matches.map(m=>({.
 //  HELPERS
 // ═══════════════════════════════════════════════════
 const outcome=(h,a)=>h>a?"H":h<a?"A":"D";
-function calcPoints(pred,actual){
-  if(!pred||actual?.home===undefined||actual?.away===undefined) return null;
-  const ph=parseInt(pred.home),pa=parseInt(pred.away),ah=parseInt(actual.home),aa=parseInt(actual.away);
-  if(isNaN(ph)||isNaN(pa)||isNaN(ah)||isNaN(aa)) return null;
-  if(ph===ah&&pa===aa) return 3;
-  if(outcome(ph,pa)===outcome(ah,aa)) return 1;
-  return 0;
+function scoreExtra(pred, actual, predType) {
+  if (pred === undefined || pred === "" || actual === undefined) return false;
+  if (predType === "exact") return parseInt(pred) === parseInt(actual);
+  if (predType === "boolean") {
+    const actualBool = actual === true || parseInt(actual) > 0;
+    return pred === "true" ? actualBool : !actualBool;
+  }
+  return false;
+}
+function calcPoints(pred, actual, rules = DEFAULT_RULES) {
+  if (!pred || actual?.home === undefined || actual?.away === undefined) return null;
+  const ph = parseInt(pred.home), pa = parseInt(pred.away);
+  const ah = parseInt(actual.home), aa = parseInt(actual.away);
+  if (isNaN(ph) || isNaN(pa) || isNaN(ah) || isNaN(aa)) return null;
+  let pts = 0;
+  if (rules.exactScore?.active) {
+    if (ph === ah && pa === aa) pts += (rules.exactScore.points ?? 3);
+  }
+  if (rules.result?.active) {
+    if (outcome(ph, pa) === outcome(ah, aa) && !(ph === ah && pa === aa)) {
+      pts += (rules.result.points ?? 1);
+    }
+  }
+  const extras = pred.extras || {};
+  const actualExtras = actual.extras || {};
+  for (const [ruleId, rule] of Object.entries(rules)) {
+    if (ruleId === "exactScore" || ruleId === "result") continue;
+    if (ruleId === "custom") {
+      for (const [cid, crule] of Object.entries(rule || {})) {
+        if (!crule.active) continue;
+        if (scoreExtra(extras[cid], actualExtras[cid], crule.predType)) pts += (crule.points ?? 1);
+      }
+      continue;
+    }
+    if (!rule.active) continue;
+    if (scoreExtra(extras[ruleId], actualExtras[ruleId], rule.predType)) pts += (rule.points ?? 1);
+  }
+  return pts;
 }
 function groupStandings(key,results){
   const st={};
