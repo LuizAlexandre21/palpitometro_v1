@@ -289,25 +289,45 @@ function HomeView({participants,newName,setNewName,addParticipant,removeParticip
 function PredictionsView({participants,activePart,setActivePart,predictions,updatePrediction,results,currentUser}){
   const [collapsed,setCollapsed]=useState(new Set());
   const toggle=g=>setCollapsed(prev=>{const n=new Set(prev);n.has(g)?n.delete(g):n.add(g);return n;});
-  if(participants.length===0) return <div style={{textAlign:"center",padding:"80px 20px",color:T.muted}}><div style={{fontSize:48,marginBottom:12}}>👥</div><p>Adicione participantes primeiro.</p></div>;
+  if(participants.length===0) return(
+    <div style={{textAlign:"center",padding:"80px 20px",color:T.muted}}>
+      <div style={{fontSize:48,marginBottom:12}}>👥</div>
+      <p>Adicione participantes na tela inicial.</p>
+    </div>
+  );
   if(!activePart) return(
     <div style={{maxWidth:720,margin:"0 auto",padding:"0 20px"}}>
-      <SectionHeader title="PALPITES" subtitle="Selecione um participante para registrar palpites" />
-      <div style={{display:"flex",flexDirection:"column",gap:9}}>
+      <SectionHeader title="Palpites" subtitle="Selecione um participante" />
+      <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:16}}>
         {participants.map(p=>{
           const predCount=Object.values(predictions[p.id]||{}).filter(pr=>pr?.home!==undefined&&pr?.home!=="").length;
           const done=predCount===ALL_MATCHES.length;
           const isMe=p.id===currentUser?.id;
-          return <button key={p.id} onClick={()=>setActivePart(p)} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"13px 18px",borderRadius:13,border:`1px solid ${isMe?"rgba(245,197,24,.4)":done?"rgba(34,197,94,.2)":"rgba(255,255,255,.08)"}`,background:isMe?"rgba(245,197,24,.06)":done?"rgba(34,197,94,.04)":"rgba(255,255,255,.03)",cursor:"pointer",fontFamily:"inherit",textAlign:"left",transition:"all .15s"}} onMouseEnter={e=>e.currentTarget.style.transform="translateX(3px)"} onMouseLeave={e=>e.currentTarget.style.transform=""}>
-            <div style={{display:"flex",alignItems:"center",gap:10}}>
-              <Avatar user={p} size={36}/>
-              <div>
-                <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:3}}><span style={{color:T.text,fontWeight:700,fontSize:14}}>{p.name}</span>{isMe&&<Tag color={T.gold}>você</Tag>}</div>
-                <div style={{display:"flex",alignItems:"center",gap:9}}><div style={{width:90,height:3,background:"rgba(255,255,255,.08)",borderRadius:2}}><div style={{width:`${(predCount/ALL_MATCHES.length)*100}%`,height:"100%",background:done?T.green:T.gold,borderRadius:2}}/></div><span style={{color:T.muted,fontSize:11}}>{predCount}/{ALL_MATCHES.length}</span></div>
+          return(
+            <button key={p.id} onClick={()=>setActivePart(p)} style={{
+              display:"flex",alignItems:"center",justifyContent:"space-between",
+              padding:"14px 18px",borderRadius:12,
+              border:`1px solid ${isMe?"rgba(59,130,246,.45)":done?"rgba(34,197,94,.3)":T.border}`,
+              background:isMe?"rgba(59,130,246,.07)":T.surface,
+              cursor:"pointer",fontFamily:"inherit",textAlign:"left",transition:"all .15s",
+            }}>
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                <Avatar user={p} size={36}/>
+                <div>
+                  <div style={{color:T.text,fontWeight:700,fontSize:14,marginBottom:4}}>
+                    {p.name}
+                    {isMe&&<span style={{fontSize:9,marginLeft:6,padding:"1px 5px",borderRadius:4,background:"rgba(59,130,246,.15)",color:T.primary,fontWeight:700}}>VOCÊ</span>}
+                  </div>
+                  <div style={{width:100,height:3,background:"rgba(255,255,255,.08)",borderRadius:2}}>
+                    <div style={{width:`${(predCount/ALL_MATCHES.length)*100}%`,height:"100%",background:done?T.green:T.primary,borderRadius:2}}/>
+                  </div>
+                </div>
               </div>
-            </div>
-            <Tag color={done?T.green:T.gold}>{done?"✓ Completo":`${predCount}/${ALL_MATCHES.length}`}</Tag>
-          </button>;
+              <span style={{fontSize:11,fontWeight:700,padding:"3px 9px",borderRadius:20,background:done?`${T.green}18`:`${T.primary}18`,color:done?T.green:T.primaryLight}}>
+                {done?"✓ Completo":`${predCount}/${ALL_MATCHES.length}`}
+              </span>
+            </button>
+          );
         })}
       </div>
     </div>
@@ -317,29 +337,34 @@ function PredictionsView({participants,activePart,setActivePart,predictions,upda
   return(
     <div style={{maxWidth:820,margin:"0 auto",padding:"0 20px"}}>
       <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20,flexWrap:"wrap"}}>
-        <button onClick={()=>setActivePart(null)} style={{background:"none",border:`1px solid ${T.border}`,color:T.gold,cursor:"pointer",fontSize:12,fontWeight:600,padding:"6px 13px",borderRadius:8,fontFamily:"inherit"}}>← Voltar</button>
-        <div style={{display:"flex",alignItems:"center",gap:10}}><Avatar user={p} size={40}/><div><h2 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:28,color:T.gold,letterSpacing:3,margin:0,lineHeight:1}}>PALPITES: {p.name.toUpperCase()}</h2><p style={{color:T.sub,fontSize:11,margin:"2px 0 0"}}>{totalPts} pts acumulados · 72 jogos</p></div></div>
-      </div>
-      <div style={{display:"flex",gap:8,padding:"9px 13px",background:"rgba(245,197,24,.05)",border:"1px solid rgba(245,197,24,.16)",borderRadius:9,marginBottom:18,flexWrap:"wrap",alignItems:"center"}}>
-        {[{pts:3,c:T.green,txt:"Exato"},{pts:1,c:T.primaryLight,txt:"Resultado"},{pts:0,c:T.red,txt:"Errado"}].map(r=>(
-          <span key={r.pts} style={{fontSize:11,color:T.sub,display:"flex",alignItems:"center",gap:4}}><span style={{width:18,height:18,borderRadius:"50%",background:r.c,color:"#fff",fontSize:9,fontWeight:800,display:"inline-flex",alignItems:"center",justifyContent:"center"}}>+{r.pts}</span>{r.txt}</span>
-        ))}
-        <span style={{fontSize:10,color:T.muted,marginLeft:"auto"}}>▲▼ para expandir/recolher</span>
+        <button onClick={()=>setActivePart(null)} style={{background:"none",border:`1px solid ${T.border}`,color:T.primaryLight,cursor:"pointer",fontSize:12,fontWeight:600,padding:"6px 13px",borderRadius:8,fontFamily:"inherit"}}>← Voltar</button>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <Avatar user={p} size={40}/>
+          <div>
+            <h2 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:26,color:T.text,letterSpacing:3,margin:0,lineHeight:1}}>{p.name.toUpperCase()}</h2>
+            <p style={{color:T.sub,fontSize:11,margin:"2px 0 0"}}>{totalPts} pts · 72 jogos</p>
+          </div>
+        </div>
       </div>
       {Object.entries(GROUPS).map(([gKey,gData])=>{
         const open=!collapsed.has(gKey);
         const predCount=gData.matches.filter(m=>{const pr=predictions[p.id]?.[m.id];return pr?.home!==undefined&&pr?.home!=="";}).length;
         return(
-          <div key={gKey} style={{...card,marginBottom:12}}>
-            <div onClick={()=>toggle(gKey)} style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",marginBottom:open?12:0}}>
-              <div style={{width:30,height:30,borderRadius:7,background:`linear-gradient(135deg,${T.gold},#c9a200)`,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Bebas Neue',sans-serif",fontSize:16,color:"#000",flexShrink:0}}>{gKey}</div>
+          <div key={gKey} style={{...card,marginBottom:10}}>
+            <div onClick={()=>toggle(gKey)} style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer",marginBottom:open?14:0}}>
+              <div style={{width:28,height:28,borderRadius:7,background:T.primary,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Bebas Neue',sans-serif",fontSize:15,color:"#fff",flexShrink:0}}>{gKey}</div>
               <span style={{color:T.text,fontWeight:700,fontSize:13}}>Grupo {gKey}</span>
-              <span style={{fontSize:15}}>{gData.teams.map(t=>FLAGS[t]||"🏳️").join(" ")}</span>
-              <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:7}}><Tag color={predCount===6?T.green:T.gold}>{predCount}/6</Tag><span style={{color:T.muted,fontSize:14}}>{open?"▲":"▼"}</span></div>
+              <div style={{display:"flex",gap:4}}>
+                {gData.teams.map(t=><TeamCrest key={t} team={t} size={20}/>)}
+              </div>
+              <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:8}}>
+                <span style={{fontSize:11,fontWeight:700,padding:"2px 8px",borderRadius:20,background:predCount===6?`${T.green}18`:`${T.primary}18`,color:predCount===6?T.green:T.primaryLight}}>{predCount}/6</span>
+                <span style={{color:T.muted,fontSize:13}}>{open?"▲":"▼"}</span>
+              </div>
             </div>
             {open&&[1,2,3].map(round=>(
               <div key={round} style={{marginBottom:8}}>
-                <div style={{fontSize:9,color:T.muted,fontWeight:700,letterSpacing:1,textTransform:"uppercase",marginBottom:5}}>{gData.matches.find(m=>m.round===round)?.date} · Rodada {round}</div>
+                <div style={{fontSize:9,color:T.muted,fontWeight:700,letterSpacing:1,textTransform:"uppercase",marginBottom:6}}>{gData.matches.find(m=>m.round===round)?.date} · Rodada {round}</div>
                 {gData.matches.filter(m=>m.round===round).map(match=>{
                   const pred=predictions[p.id]?.[match.id];
                   const actual=results[match.id];
@@ -365,23 +390,36 @@ function ResultsView({results,updateResult,currentUser}){
   const isAdmin=currentUser?.isAdmin;
   return(
     <div style={{maxWidth:820,margin:"0 auto",padding:"0 20px"}}>
-      <SectionHeader title="RESULTADOS REAIS" subtitle={isAdmin?"Insira os placares reais — pontos calculados automaticamente":"Somente o admin pode inserir resultados"} />
-      {!isAdmin&&<div style={{padding:"9px 14px",borderRadius:9,marginBottom:14,background:"rgba(167,139,250,.08)",border:"1px solid rgba(167,139,250,.2)",fontSize:12,color:T.primaryLight}}>👀 Modo visualização — somente o admin insere os resultados.</div>}
-      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20,padding:"12px 16px",background:"rgba(34,197,94,.06)",border:"1px solid rgba(34,197,94,.2)",borderRadius:10}}>
+      <SectionHeader title="Resultados Reais" subtitle={isAdmin?"Insira os placares":"Somente o admin insere"} />
+      {!isAdmin&&(
+        <div style={{padding:"9px 14px",borderRadius:9,marginBottom:14,marginTop:10,background:"rgba(59,130,246,.07)",border:`1px solid rgba(59,130,246,.2)`,fontSize:12,color:T.primaryLight}}>
+          👀 Modo visualização — somente o admin insere os resultados.
+        </div>
+      )}
+      <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20,padding:"12px 16px",background:"rgba(34,197,94,.05)",border:"1px solid rgba(34,197,94,.2)",borderRadius:10,marginTop:10}}>
         <div style={{fontSize:22}}>⚽</div>
-        <div><div style={{color:T.text,fontWeight:600,fontSize:13}}>{done} de {ALL_MATCHES.length} jogos com resultado</div>
-          <div style={{width:160,height:4,background:"rgba(255,255,255,.08)",borderRadius:3,marginTop:5}}><div style={{width:`${(done/ALL_MATCHES.length)*100}%`,height:"100%",background:T.green,borderRadius:3}}/></div></div>
+        <div>
+          <div style={{color:T.text,fontWeight:600,fontSize:13}}>{done} de {ALL_MATCHES.length} jogos com resultado</div>
+          <div style={{width:160,height:4,background:"rgba(255,255,255,.08)",borderRadius:3,marginTop:5}}>
+            <div style={{width:`${(done/ALL_MATCHES.length)*100}%`,height:"100%",background:T.green,borderRadius:3}}/>
+          </div>
+        </div>
       </div>
       {Object.entries(GROUPS).map(([gKey,gData])=>{
         const open=!collapsed.has(gKey);
         const gDone=gData.matches.filter(m=>{const r=results[m.id];return r&&r.home!==""&&r.home!==undefined&&r.away!==""&&r.away!==undefined;}).length;
         return(
-          <div key={gKey} style={{...card,marginBottom:12}}>
-            <div onClick={()=>toggle(gKey)} style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer",marginBottom:open?12:0}}>
-              <div style={{width:30,height:30,borderRadius:7,background:`linear-gradient(135deg,${T.gold},#c9a200)`,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Bebas Neue',sans-serif",fontSize:16,color:"#000",flexShrink:0}}>{gKey}</div>
+          <div key={gKey} style={{...card,marginBottom:10}}>
+            <div onClick={()=>toggle(gKey)} style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer",marginBottom:open?14:0}}>
+              <div style={{width:28,height:28,borderRadius:7,background:T.primary,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Bebas Neue',sans-serif",fontSize:15,color:"#fff",flexShrink:0}}>{gKey}</div>
               <span style={{color:T.text,fontWeight:700,fontSize:13}}>Grupo {gKey}</span>
-              <span>{gData.teams.map(t=>FLAGS[t]||"🏳️").join(" ")}</span>
-              <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:7}}><Tag color={gDone===6?T.green:T.gold}>{gDone}/6</Tag><span style={{color:T.muted,fontSize:14}}>{open?"▲":"▼"}</span></div>
+              <div style={{display:"flex",gap:4}}>
+                {gData.teams.map(t=><TeamCrest key={t} team={t} size={20}/>)}
+              </div>
+              <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:8}}>
+                <span style={{fontSize:11,fontWeight:700,padding:"2px 8px",borderRadius:20,background:gDone===6?`${T.green}18`:`${T.primary}18`,color:gDone===6?T.green:T.primaryLight}}>{gDone}/6</span>
+                <span style={{color:T.muted,fontSize:13}}>{open?"▲":"▼"}</span>
+              </div>
             </div>
             {open&&gData.matches.map(match=>(
               <MatchCard key={match.id} match={match} hVal={results[match.id]?.home} aVal={results[match.id]?.away}
@@ -400,13 +438,18 @@ function ResultsView({results,updateResult,currentUser}){
 function GroupsView({allStandings}){
   return(
     <div style={{maxWidth:1100,margin:"0 auto",padding:"0 20px"}}>
-      <SectionHeader title="FASE DE GRUPOS" subtitle="12 grupos · 2 primeiros + 8 melhores terceiros avançam" />
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(310px,1fr))",gap:14}}>
+      <SectionHeader title="Fase de Grupos" subtitle="2 primeiros + 8 melhores terceiros avançam" />
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(310px,1fr))",gap:14,marginTop:16}}>
         {Object.entries(allStandings).map(([key,st])=>(
           <div key={key} style={card}>
-            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
-              <div style={{width:34,height:34,borderRadius:8,background:`linear-gradient(135deg,${T.gold},#c9a200)`,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Bebas Neue',sans-serif",fontSize:18,color:"#000"}}>{key}</div>
-              <div><div style={{color:T.text,fontWeight:700,fontSize:13}}>Grupo {key}</div><div style={{fontSize:14}}>{GROUPS[key].teams.map(t=>FLAGS[t]||"🏳️").join(" ")}</div></div>
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
+              <div style={{width:32,height:32,borderRadius:8,background:T.primary,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Bebas Neue',sans-serif",fontSize:17,color:"#fff"}}>{key}</div>
+              <div>
+                <div style={{color:T.text,fontWeight:700,fontSize:13}}>Grupo {key}</div>
+                <div style={{display:"flex",gap:4,marginTop:3}}>
+                  {GROUPS[key].teams.map(t=><TeamCrest key={t} team={t} size={18}/>)}
+                </div>
+              </div>
             </div>
             <table style={{width:"100%",borderCollapse:"collapse"}}>
               <thead><tr style={{borderBottom:`1px solid ${T.border}`}}>
@@ -416,17 +459,17 @@ function GroupsView({allStandings}){
               </tr></thead>
               <tbody>
                 {st.map((s,i)=>(
-                  <tr key={s.team} style={{borderBottom:"1px solid rgba(255,255,255,.04)",background:i<2?"rgba(245,197,24,.04)":"transparent"}}>
-                    <td style={{padding:"7px 3px",textAlign:"center",color:i<2?T.gold:T.muted,fontWeight:700,fontSize:11}}>{i+1}</td>
+                  <tr key={s.team} style={{borderBottom:"1px solid rgba(255,255,255,.04)",background:i<2?"rgba(59,130,246,.04)":"transparent"}}>
+                    <td style={{padding:"7px 3px",textAlign:"center",color:i<2?T.primaryLight:T.muted,fontWeight:700,fontSize:11}}>{i+1}</td>
                     <td style={{padding:"7px 3px"}}>
-                      <div style={{display:"flex",alignItems:"center",gap:4}}>
-                        <span style={{fontSize:15}}>{FLAGS[s.team]||"🏳️"}</span>
+                      <div style={{display:"flex",alignItems:"center",gap:5}}>
+                        <TeamCrest team={s.team} size={18}/>
                         <span style={{color:T.text,fontSize:10,fontWeight:i<2?700:400}}>{s.team}</span>
-                        {i<2&&<span style={{fontSize:7,color:T.gold,border:`1px solid ${T.gold}40`,padding:"1px 3px",borderRadius:2,flexShrink:0}}>Q</span>}
+                        {i<2&&<span style={{fontSize:7,color:T.primary,border:`1px solid ${T.primary}40`,padding:"1px 3px",borderRadius:2,flexShrink:0}}>Q</span>}
                       </div>
                     </td>
                     {[s.p,s.w,s.d,s.l,s.gf,s.ga,s.gd>0?`+${s.gd}`:s.gd,s.pts].map((v,vi)=>(
-                      <td key={vi} style={{padding:"7px 3px",textAlign:"center",color:vi===7?T.gold:T.sub,fontWeight:vi===7?800:400,fontSize:10}}>{v}</td>
+                      <td key={vi} style={{padding:"7px 3px",textAlign:"center",color:vi===7?T.primaryLight:T.sub,fontWeight:vi===7?800:400,fontSize:10}}>{v}</td>
                     ))}
                   </tr>
                 ))}
