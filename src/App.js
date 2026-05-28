@@ -768,10 +768,32 @@ function LeaderboardView({leaderboard,predictions,results}){
 // ═══════════════════════════════════════════════════
 //  CONFIG VIEW
 // ═══════════════════════════════════════════════════
-function ConfigView({poolConfig,updatePoolConfig,participants,currentUser,campeonatoId,inviteCode}){
+function ConfigView({poolConfig,updatePoolConfig,participants,currentUser,campeonatoId,inviteCode,rules=DEFAULT_RULES,write}){
   const [tab,setTab]=useState("pool");
+  const [newRuleLabel,setNewRuleLabel]=useState("");
+  const [newRulePoints,setNewRulePoints]=useState("1");
+  const [newRulePredType,setNewRulePredType]=useState("boolean");
   const isAdmin=currentUser?.isAdmin;
-  const tabs=[{id:"pool",label:"⚙️ Configurações"},{id:"invite",label:"🔗 Convite"}];
+  const tabs=[{id:"pool",label:"⚙️ Configurações"},{id:"invite",label:"🔗 Convite"},{id:"rules",label:"📋 Regras"}];
+
+  const updateRule = async (ruleId, field, val) => {
+    if (!write || !campeonatoId || !isAdmin) return;
+    await write(`rules/${ruleId}/${field}`, val);
+  };
+  const updateCustomRule = async (cid, field, val) => {
+    if (!write || !campeonatoId || !isAdmin) return;
+    await write(`rules/custom/${cid}/${field}`, val);
+  };
+  const removeCustomRule = async (cid) => {
+    if (!write || !campeonatoId || !isAdmin) return;
+    await write(`rules/custom/${cid}`, null);
+  };
+  const addCustomRule = async () => {
+    if (!newRuleLabel.trim() || !write || !campeonatoId || !isAdmin) return;
+    const cid = Date.now().toString(36);
+    await write(`rules/custom/${cid}`, { active: true, points: parseInt(newRulePoints)||1, label: newRuleLabel.trim(), predType: newRulePredType });
+    setNewRuleLabel(""); setNewRulePoints("1"); setNewRulePredType("boolean");
+  };
   return(
     <div style={{maxWidth:920,margin:"0 auto",padding:"0 20px"}}>
       <SectionHeader title="CONFIGURAÇÕES" subtitle={isAdmin?`Administrador: ${currentUser?.name}`:"Visualização — somente o admin edita"} />
@@ -812,6 +834,79 @@ function ConfigView({poolConfig,updatePoolConfig,participants,currentUser,campeo
               {window.location.origin}?id={campeonatoId}
             </div>
           </div>
+        </div>
+      )}
+      {tab==="rules"&&(
+        <div style={{display:"flex",flexDirection:"column",gap:10}}>
+          {[
+            {id:"exactScore",label:"Placar Exato",type:"base"},
+            {id:"result",label:"Resultado Correto",type:"base"},
+            {id:"yellowCards",label:"Cartões Amarelos",type:"auto"},
+            {id:"expulsions",label:"Expulsões",type:"auto"},
+          ].map(({id,label,type})=>(
+            <div key={id} style={{...card,display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+              <div style={{flex:1,minWidth:120}}>
+                <div style={{color:T.text,fontWeight:600,fontSize:13}}>{label}</div>
+                <div style={{fontSize:10,color:T.muted,marginTop:2,textTransform:"uppercase",letterSpacing:.6}}>{type==="base"?"Base":"Automático (API)"}</div>
+              </div>
+              {type==="auto"&&!(rules[id]?.active??false)&&(
+                <select disabled={!isAdmin} value={rules[id]?.predType||"boolean"}
+                  onChange={e=>updateRule(id,"predType",e.target.value)}
+                  style={{padding:"5px 8px",borderRadius:7,border:`1px solid ${T.border}`,background:"rgba(255,255,255,.05)",color:T.sub,fontSize:12,fontFamily:"inherit",cursor:isAdmin?"pointer":"not-allowed"}}>
+                  <option value="boolean">Sim/Não</option>
+                  <option value="exact">Exato</option>
+                </select>
+              )}
+              <input type="number" min="1" max="99" disabled={!isAdmin}
+                value={rules[id]?.points??(id==="exactScore"?3:1)}
+                onChange={e=>updateRule(id,"points",parseInt(e.target.value)||1)}
+                style={{width:55,padding:"5px 8px",borderRadius:7,border:`1px solid ${T.border}`,background:isAdmin?"rgba(255,255,255,.07)":"rgba(255,255,255,.03)",color:T.text,fontSize:13,textAlign:"center",fontFamily:"inherit",outline:"none",cursor:isAdmin?"text":"not-allowed"}}/>
+              <span style={{fontSize:10,color:T.muted}}>pts</span>
+              <button disabled={!isAdmin} onClick={()=>updateRule(id,"active",!(rules[id]?.active??true))}
+                style={{padding:"5px 14px",borderRadius:20,border:`1px solid ${(rules[id]?.active??true)?T.primary:T.border}`,background:(rules[id]?.active??true)?"rgba(59,130,246,.15)":"transparent",color:(rules[id]?.active??true)?T.primaryLight:T.muted,cursor:isAdmin?"pointer":"not-allowed",fontSize:12,fontFamily:"inherit",fontWeight:700}}>
+                {(rules[id]?.active??true)?"Ativa":"Inativa"}
+              </button>
+            </div>
+          ))}
+          {Object.entries(rules.custom||{}).map(([cid,crule])=>(
+            <div key={cid} style={{...card,display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+              <div style={{flex:1,minWidth:120}}>
+                <div style={{color:T.text,fontWeight:600,fontSize:13}}>{crule.label}</div>
+                <div style={{fontSize:10,color:T.muted,marginTop:2,textTransform:"uppercase",letterSpacing:.6}}>Custom · {crule.predType==="exact"?"Exato":"Sim/Não"}</div>
+              </div>
+              <input type="number" min="1" max="99" disabled={!isAdmin}
+                value={crule.points??1}
+                onChange={e=>updateCustomRule(cid,"points",parseInt(e.target.value)||1)}
+                style={{width:55,padding:"5px 8px",borderRadius:7,border:`1px solid ${T.border}`,background:isAdmin?"rgba(255,255,255,.07)":"rgba(255,255,255,.03)",color:T.text,fontSize:13,textAlign:"center",fontFamily:"inherit",outline:"none",cursor:isAdmin?"text":"not-allowed"}}/>
+              <span style={{fontSize:10,color:T.muted}}>pts</span>
+              <button disabled={!isAdmin} onClick={()=>updateCustomRule(cid,"active",!crule.active)}
+                style={{padding:"5px 14px",borderRadius:20,border:`1px solid ${crule.active?T.primary:T.border}`,background:crule.active?"rgba(59,130,246,.15)":"transparent",color:crule.active?T.primaryLight:T.muted,cursor:isAdmin?"pointer":"not-allowed",fontSize:12,fontFamily:"inherit",fontWeight:700}}>
+                {crule.active?"Ativa":"Inativa"}
+              </button>
+              {isAdmin&&<button onClick={()=>removeCustomRule(cid)}
+                style={{padding:"5px 10px",borderRadius:20,border:`1px solid rgba(248,113,113,.3)`,background:"rgba(248,113,113,.08)",color:T.red,cursor:"pointer",fontSize:12,fontFamily:"inherit",fontWeight:700}}>✕</button>}
+            </div>
+          ))}
+          {isAdmin&&(
+            <div style={{...card,display:"flex",flexDirection:"column",gap:12}}>
+              <div style={{color:T.text,fontWeight:600,fontSize:13}}>+ Nova regra personalizada</div>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                <input placeholder="Ex: Haverá gol no 1º tempo?" value={newRuleLabel}
+                  onChange={e=>setNewRuleLabel(e.target.value)}
+                  style={{flex:1,minWidth:180,...inp()}}/>
+                <input type="number" min="1" max="99" placeholder="Pts" value={newRulePoints}
+                  onChange={e=>setNewRulePoints(e.target.value)}
+                  style={{width:65,...inp()}}/>
+                <select value={newRulePredType} onChange={e=>setNewRulePredType(e.target.value)}
+                  style={{padding:"11px 10px",borderRadius:10,border:`1px solid ${T.border}`,background:"rgba(255,255,255,.05)",color:T.text,fontSize:14,fontFamily:"inherit"}}>
+                  <option value="boolean">Sim/Não</option>
+                  <option value="exact">Exato</option>
+                </select>
+                <button onClick={addCustomRule}
+                  style={{padding:"11px 18px",borderRadius:10,border:"none",background:T.primary,color:"#fff",fontWeight:700,cursor:"pointer",fontSize:14,fontFamily:"inherit"}}>Adicionar</button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
