@@ -485,74 +485,96 @@ function GroupsView({allStandings}){
 // ═══════════════════════════════════════════════════
 //  KNOCKOUT VIEW
 // ═══════════════════════════════════════════════════
-function ScoreBox({value,onChange,disabled}){
-  return <input type="number" min="0" max="20" value={value??""} onChange={e=>onChange(e.target.value)} disabled={disabled}
-    style={{width:48,height:44,textAlign:"center",fontSize:20,fontWeight:800,
-      background:disabled?"rgba(255,255,255,.04)":"rgba(245,197,24,.07)",
-      border:`2px solid ${disabled?"rgba(255,255,255,.08)":"rgba(245,197,24,.35)"}`,
-      borderRadius:10,color:T.text,outline:"none",fontFamily:"'DM Mono',monospace"}}/>;
-}
 function KnockoutView({koMatches,updateKOMatch,currentUser}){
-  const [tab,setTab]=useState("r32");
   const isAdmin=currentUser?.isAdmin;
-  const ROUNDS=[
-    {id:"r32",label:"16avos",ico:"⚡",count:16,dates:"29 Jun–4 Jul"},
-    {id:"r16",label:"Oitavas",ico:"🔥",count:8,dates:"6–9 Jul"},
-    {id:"qf",label:"Quartas",ico:"💥",count:4,dates:"11–12 Jul"},
-    {id:"sf",label:"Semis",ico:"🎯",count:2,dates:"15–16 Jul"},
-    {id:"tp",label:"3º Lugar",ico:"🥉",count:1,dates:"18 Jul"},
-    {id:"final",label:"Final",ico:"🏆",count:1,dates:"19 Jul"},
+  const champion=koMatches?.final_winner;
+  const rounds=[
+    {key:"r16",label:"16avos de Final",slots:16},
+    {key:"qf",label:"Quartas de Final",slots:8},
+    {key:"sf",label:"Semifinais",slots:4},
+    {key:"tf",label:"Disputa 3º Lugar",slots:1},
+    {key:"final",label:"Final",slots:1},
   ];
-  const currRound=ROUNDS.find(r=>r.id===tab);
-  const getM=id=>koMatches[id]||{};
-  const setField=(id,field,val)=>updateKOMatch(id,field,val);
-  const getWinner=id=>{const m=getM(id);if(!m.homeScore||!m.awayScore||m.homeScore===""||m.awayScore==="") return null;const h=parseInt(m.homeScore),a=parseInt(m.awayScore);if(isNaN(h)||isNaN(a)||h===a) return null;return h>a?m.homeTeam:m.awayTeam;};
-  const champion=getWinner("final_1");
-  const matchIds=Array.from({length:currRound.count},(_,i)=>`${tab}_${i+1}`);
-  const selSt=inp({fontSize:12,padding:"8px 11px",background:"rgba(255,255,255,.06)",cursor:isAdmin?"pointer":"default"});
-  function KOCard({matchId}){
-    const m=getM(matchId);const num=matchId.split("_")[1];const winner=getWinner(matchId);
-    return(
-      <div style={{...card,padding:"12px 14px",marginBottom:0,borderColor:winner?"rgba(245,197,24,.2)":T.border}}>
-        <div style={{fontSize:9,color:T.muted,fontWeight:700,letterSpacing:1,textTransform:"uppercase",marginBottom:8}}>Jogo {num}</div>
-        <div style={{display:"flex",alignItems:"stretch",gap:7}}>
-          <div style={{flex:1,display:"flex",flexDirection:"column",gap:5,alignItems:"flex-end"}}>
-            <select value={m.homeTeam||""} onChange={e=>isAdmin&&setField(matchId,"homeTeam",e.target.value)} disabled={!isAdmin} style={{...selSt,textAlign:"right"}}>
-              <option value="">— Selecione —</option>
-              {ALL_TEAMS.map(t=><option key={t} value={t}>{FLAGS[t]||"🏳️"} {t}</option>)}
-            </select>
-            {m.homeTeam&&<div style={{fontSize:26,textAlign:"right"}}>{FLAGS[m.homeTeam]||"🏳️"}</div>}
-          </div>
-          <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,flexShrink:0}}>
-            <div style={{display:"flex",alignItems:"center",gap:4}}>
-              <ScoreBox value={m.homeScore} onChange={v=>isAdmin&&setField(matchId,"homeScore",v)} disabled={!isAdmin||!m.homeTeam}/>
-              <span style={{color:T.muted,fontWeight:900,fontSize:13}}>–</span>
-              <ScoreBox value={m.awayScore} onChange={v=>isAdmin&&setField(matchId,"awayScore",v)} disabled={!isAdmin||!m.awayTeam}/>
-            </div>
-            {winner&&<div style={{fontSize:9,color:T.gold,fontWeight:700,letterSpacing:.5,textAlign:"center"}}>✓ {winner}</div>}
-          </div>
-          <div style={{flex:1,display:"flex",flexDirection:"column",gap:5}}>
-            <select value={m.awayTeam||""} onChange={e=>isAdmin&&setField(matchId,"awayTeam",e.target.value)} disabled={!isAdmin} style={selSt}>
-              <option value="">— Selecione —</option>
-              {ALL_TEAMS.map(t=><option key={t} value={t}>{FLAGS[t]||"🏳️"} {t}</option>)}
-            </select>
-            {m.awayTeam&&<div style={{fontSize:26}}>{FLAGS[m.awayTeam]||"🏳️"}</div>}
+  const selSt=inp({fontSize:11,padding:"6px 8px"});
+  return(
+    <div style={{maxWidth:900,margin:"0 auto",padding:"0 20px"}}>
+      <SectionHeader title="Mata-mata" subtitle="Fase eliminatória" />
+      {champion&&(
+        <div style={{
+          textAlign:"center",padding:"28px",marginBottom:24,marginTop:16,
+          background:"linear-gradient(135deg,rgba(245,197,24,.1),rgba(59,130,246,.08))",
+          border:"2px solid rgba(245,197,24,.4)",borderRadius:18,
+          boxShadow:"0 0 60px rgba(245,197,24,.12)",
+        }}>
+          <div style={{fontSize:56,filter:"drop-shadow(0 0 20px rgba(245,197,24,.5))",marginBottom:8}}>🏆</div>
+          <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:36,color:"#F5C518",letterSpacing:5,lineHeight:1}}>CAMPEÃO DO MUNDO</div>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:12,marginTop:10}}>
+            <TeamCrest team={champion} size={56}/>
+            <span style={{color:T.text,fontSize:22,fontWeight:800}}>{champion}</span>
           </div>
         </div>
-      </div>
-    );
-  }
-  return(
-    <div style={{maxWidth:1000,margin:"0 auto",padding:"0 20px"}}>
-      <SectionHeader title="MATA-MATA" subtitle="48 equipes → 32 classificados → 16avos de final" />
-      {!isAdmin&&<div style={{padding:"9px 13px",borderRadius:9,marginBottom:16,background:"rgba(167,139,250,.08)",border:"1px solid rgba(167,139,250,.2)",fontSize:12,color:T.primaryLight}}>👀 Somente o admin pode inserir times e resultados.</div>}
-      {champion&&<div style={{textAlign:"center",padding:"24px",marginBottom:24,background:"linear-gradient(135deg,rgba(245,197,24,.12),rgba(245,197,24,.03))",border:`2px solid ${T.gold}`,borderRadius:18,boxShadow:"0 0 60px rgba(245,197,24,.15)"}}><div style={{fontSize:54,filter:"drop-shadow(0 0 20px rgba(245,197,24,.5))"}}>🏆</div><div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:44,color:T.gold,letterSpacing:6,lineHeight:1,marginTop:6}}>CAMPEÃO DO MUNDO</div><div style={{color:T.text,fontSize:24,fontWeight:800,marginTop:5}}>{FLAGS[champion]||"🏳️"} {champion}</div></div>}
-      <div style={{display:"flex",gap:5,marginBottom:20,flexWrap:"wrap"}}>
-        {ROUNDS.map(r=><button key={r.id} onClick={()=>setTab(r.id)} style={{padding:"8px 13px",borderRadius:8,border:"none",background:tab===r.id?T.gold:"rgba(255,255,255,.06)",color:tab===r.id?"#000":T.sub,fontWeight:tab===r.id?700:500,cursor:"pointer",fontSize:12,fontFamily:"inherit",display:"flex",flexDirection:"column",alignItems:"center",gap:1}}><span>{r.ico} {r.label}</span><span style={{fontSize:8,opacity:.7}}>{r.dates}</span></button>)}
-      </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(340px,1fr))",gap:11}}>
-        {matchIds.map(id=><KOCard key={id} matchId={id}/>)}
-      </div>
+      )}
+      {rounds.map(({key,label,slots})=>{
+        const matches=Array.from({length:slots},(_,i)=>{
+          const mid=`${key}_${i+1}`;
+          return {id:mid,...(koMatches?.[mid]||{})};
+        });
+        return(
+          <div key={key} style={{marginBottom:20}}>
+            <div style={{fontSize:10,fontWeight:700,color:T.sub,textTransform:"uppercase",letterSpacing:1.5,marginBottom:10,marginTop:8}}>{label}</div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))",gap:10}}>
+              {matches.map(m=>(
+                <div key={m.id} style={{...card}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:isAdmin?10:0}}>
+                    <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"flex-end",gap:6}}>
+                      {m.homeTeam?(
+                        <><span style={{color:T.text,fontWeight:700,fontSize:12,textAlign:"right"}}>{m.homeTeam}</span><TeamCrest team={m.homeTeam} size={36}/></>
+                      ):(
+                        <span style={{color:T.muted,fontSize:12,fontStyle:"italic"}}>A definir</span>
+                      )}
+                    </div>
+                    <div style={{display:"flex",alignItems:"center",gap:5,flexShrink:0}}>
+                      <input type="number" min="0" max="20" value={m.home??""} onChange={e=>isAdmin&&updateKOMatch(m.id,"home",e.target.value)} disabled={!isAdmin}
+                        style={{width:44,height:44,textAlign:"center",fontSize:20,fontWeight:800,background:"rgba(59,130,246,.08)",border:`2px solid ${T.border}`,borderRadius:10,color:T.text,outline:"none",fontFamily:"'DM Mono',monospace"}}/>
+                      <span style={{color:T.muted,fontWeight:900,fontSize:13}}>–</span>
+                      <input type="number" min="0" max="20" value={m.away??""} onChange={e=>isAdmin&&updateKOMatch(m.id,"away",e.target.value)} disabled={!isAdmin}
+                        style={{width:44,height:44,textAlign:"center",fontSize:20,fontWeight:800,background:"rgba(59,130,246,.08)",border:`2px solid ${T.border}`,borderRadius:10,color:T.text,outline:"none",fontFamily:"'DM Mono',monospace"}}/>
+                    </div>
+                    <div style={{flex:1,display:"flex",alignItems:"center",gap:6}}>
+                      {m.awayTeam?(
+                        <><TeamCrest team={m.awayTeam} size={36}/><span style={{color:T.text,fontWeight:700,fontSize:12}}>{m.awayTeam}</span></>
+                      ):(
+                        <span style={{color:T.muted,fontSize:12,fontStyle:"italic"}}>A definir</span>
+                      )}
+                    </div>
+                  </div>
+                  {isAdmin&&(
+                    <div style={{display:"flex",gap:6}}>
+                      <select value={m.homeTeam||""} onChange={e=>updateKOMatch(m.id,"homeTeam",e.target.value)} style={selSt}>
+                        <option value="">— Time casa</option>
+                        {ALL_TEAMS.map(t=><option key={t} value={t}>{t}</option>)}
+                      </select>
+                      <select value={m.awayTeam||""} onChange={e=>updateKOMatch(m.id,"awayTeam",e.target.value)} style={selSt}>
+                        <option value="">— Time fora</option>
+                        {ALL_TEAMS.map(t=><option key={t} value={t}>{t}</option>)}
+                      </select>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+      {isAdmin&&(
+        <div style={{...card,marginTop:8}}>
+          <SectionHeader title="Campeão" />
+          <select value={champion||""} onChange={e=>updateKOMatch("final_winner","",e.target.value)} style={inp({marginTop:10})}>
+            <option value="">— Selecionar campeão</option>
+            {ALL_TEAMS.map(t=><option key={t} value={t}>{t}</option>)}
+          </select>
+        </div>
+      )}
     </div>
   );
 }
@@ -562,42 +584,59 @@ function KnockoutView({koMatches,updateKOMatch,currentUser}){
 // ═══════════════════════════════════════════════════
 function LeaderboardView({leaderboard,predictions,results}){
   const [sel,setSel]=useState(null);
-  if(leaderboard.length===0) return <div style={{textAlign:"center",padding:"80px 20px",color:T.muted}}><div style={{fontSize:48,marginBottom:12}}>🏆</div><p>Adicione participantes para ver o ranking.</p></div>;
-  const medals=["🥇","🥈","🥉"];
+  const maxPts=leaderboard[0]?.pts||1;
   const breakdown=sel?ALL_MATCHES.map(m=>({...m,pred:predictions[sel.id]?.[m.id],actual:results[m.id],pts:calcPoints(predictions[sel.id]?.[m.id],results[m.id])})):[];
   return(
     <div style={{maxWidth:820,margin:"0 auto",padding:"0 20px"}}>
-      <SectionHeader title="RANKING DO PALPITÔMETRO" subtitle="Ranking completo · Máx. 216 pts (72 jogos × 3)" />
-      {leaderboard[0]?.pts>0&&<div style={{...card,textAlign:"center",padding:"26px",marginBottom:20,background:"linear-gradient(135deg,rgba(245,197,24,.1),rgba(245,197,24,.02))",border:"1px solid rgba(245,197,24,.3)"}}>
-        <Avatar user={leaderboard[0]} size={64}/><div style={{marginTop:8}}/>
-        <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:40,color:T.gold,letterSpacing:4,marginTop:6,lineHeight:1}}>{leaderboard[0].name.toUpperCase()}</div>
-        <div style={{color:T.text,fontSize:28,fontWeight:800,marginTop:3}}>{leaderboard[0].pts} pts</div>
-        <div style={{display:"flex",justifyContent:"center",gap:8,marginTop:8}}><Tag color={T.green}>🎯 {leaderboard[0].exact} exatos</Tag><Tag color={T.primaryLight}>✓ {leaderboard[0].correct} corretos</Tag></div>
-      </div>}
-      <div style={{display:"flex",flexDirection:"column",gap:7,marginBottom:20}}>
+      <SectionHeader title="Ranking Geral" subtitle={`${leaderboard.length} participantes`} />
+      <div style={{marginTop:16}}>
         {leaderboard.map((p,i)=>(
-          <div key={p.id} onClick={()=>setSel(sel?.id===p.id?null:p)} style={{padding:"13px 16px",borderRadius:12,cursor:"pointer",background:i===0?"rgba(245,197,24,.07)":i===1?"rgba(148,163,184,.05)":i===2?"rgba(180,120,60,.05)":"rgba(255,255,255,.025)",border:`1px solid ${sel?.id===p.id?"rgba(245,197,24,.4)":i===0?"rgba(245,197,24,.2)":T.border}`,transition:"all .2s"}}>
-            <div style={{display:"flex",alignItems:"center",gap:11}}>
-              <div style={{fontSize:22,minWidth:30,textAlign:"center"}}>{i<3?medals[i]:<span style={{color:T.muted,fontWeight:700,fontSize:13}}>{i+1}º</span>}</div>
-              <Avatar user={p} size={38}/>
-              <div style={{flex:1}}>
-                <div style={{display:"flex",alignItems:"center",gap:6}}><span style={{color:T.text,fontWeight:700,fontSize:14}}>{p.name}</span>{p.isAdmin&&<Tag color={T.primaryLight}>👑 Admin</Tag>}{p.email&&<span style={{fontSize:10,color:T.muted}}>· {p.email}</span>}</div>
-                <div style={{display:"flex",gap:6,marginTop:4,flexWrap:"wrap"}}><Tag color={T.green}>🎯 {p.exact} exatos</Tag><Tag color={T.primaryLight}>✓ {p.correct} corretos</Tag></div>
+          <div key={p.id} onClick={()=>setSel(sel?.id===p.id?null:p)} style={{cursor:"pointer"}}>
+            <LeaderboardRow rank={i+1} participant={p} points={p.pts||0} maxPoints={maxPts} isCurrentUser={false}/>
+            {sel?.id===p.id&&(
+              <div style={{...card,marginBottom:8,marginTop:-2,borderTopLeftRadius:0,borderTopRightRadius:0}}>
+                <div style={{fontSize:11,color:T.sub,marginBottom:12}}>Palpites de <strong style={{color:T.text}}>{p.name}</strong></div>
+                {Object.entries(GROUPS).map(([gKey,gData])=>{
+                  const gPts=gData.matches.reduce((acc,m)=>{const pts=calcPoints(predictions[p.id]?.[m.id],results[m.id]);return acc+(pts||0);},0);
+                  return(
+                    <div key={gKey} style={{marginBottom:14}}>
+                      <div style={{fontSize:10,color:T.muted,fontWeight:700,letterSpacing:1,marginBottom:6,display:"flex",alignItems:"center",gap:6}}>
+                        GRUPO {gKey}
+                        <span style={{fontSize:10,padding:"1px 6px",borderRadius:10,background:`${T.primary}18`,color:T.primaryLight,fontWeight:700}}>{gPts} pts</span>
+                      </div>
+                      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:4}}>
+                        {gData.matches.map(m=>{
+                          const bm=breakdown.find(x=>x.id===m.id);
+                          const hasPred=bm?.pred?.home!==undefined&&bm?.pred?.home!=="";
+                          const hasAct=bm?.actual?.home!==undefined&&bm?.actual?.home!=="";
+                          return(
+                            <div key={m.id} style={{padding:"6px 8px",borderRadius:8,fontSize:10,
+                              background:bm?.pts===3?"rgba(34,197,94,.08)":bm?.pts===1?"rgba(59,130,246,.08)":bm?.pts===0&&hasAct?"rgba(248,113,113,.06)":"rgba(255,255,255,.03)",
+                              border:`1px solid ${bm?.pts===3?"rgba(34,197,94,.2)":bm?.pts===1?"rgba(59,130,246,.2)":"rgba(255,255,255,.05)"}`}}>
+                              <div style={{display:"flex",justifyContent:"space-between",marginBottom:3,alignItems:"center"}}>
+                                <div style={{display:"flex",gap:3,alignItems:"center"}}>
+                                  <TeamCrest team={m.home} size={14}/>
+                                  <span style={{color:T.muted,fontSize:9}}>vs</span>
+                                  <TeamCrest team={m.away} size={14}/>
+                                </div>
+                                {bm?.pts!==null&&bm?.pts!==undefined&&(
+                                  <span style={{width:14,height:14,borderRadius:"50%",background:bm.pts===3?T.green:bm.pts===1?T.primary:T.red,color:"#fff",fontSize:7,fontWeight:800,display:"inline-flex",alignItems:"center",justifyContent:"center"}}>+{bm.pts}</span>
+                                )}
+                              </div>
+                              <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+                                {hasPred&&<span style={{color:T.muted}}>P:<strong style={{color:T.text}}>{bm.pred.home}–{bm.pred.away}</strong></span>}
+                                {hasAct&&<span style={{color:T.muted}}>R:<strong style={{color:T.text}}>{bm.actual.home}–{bm.actual.away}</strong></span>}
+                                {!hasPred&&<span style={{color:T.muted,fontStyle:"italic"}}>–</span>}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              <div style={{textAlign:"right"}}><div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:i===0?34:26,color:i===0?T.gold:T.text,lineHeight:1,letterSpacing:1}}>{p.pts}</div><div style={{color:T.muted,fontSize:9}}>PTS</div></div>
-            </div>
-            {sel?.id===p.id&&<div style={{marginTop:11,paddingTop:11,borderTop:`1px solid ${T.border}`}}>
-              <div style={{fontSize:10,color:T.muted,fontWeight:700,marginBottom:7,textTransform:"uppercase",letterSpacing:.5}}>Detalhamento por grupo</div>
-              {Object.entries(GROUPS).map(([gKey,gData])=>{
-                const gPts=gData.matches.reduce((acc,m)=>{const pts=calcPoints(predictions[p.id]?.[m.id],results[m.id]);return acc+(pts||0);},0);
-                return <div key={gKey} style={{marginBottom:7}}>
-                  <div style={{fontSize:10,color:T.muted,fontWeight:700,marginBottom:4}}>Grupo {gKey} — {gPts} pts</div>
-                  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))",gap:4}}>
-                    {gData.matches.map(m=>{const bm=breakdown.find(x=>x.id===m.id);const hasPred=bm?.pred?.home!==undefined&&bm?.pred?.home!=="";const hasAct=bm?.actual?.home!==undefined&&bm?.actual?.home!=="";return <div key={m.id} style={{padding:"5px 7px",borderRadius:6,fontSize:10,background:bm?.pts===3?"rgba(34,197,94,.08)":bm?.pts===1?"rgba(96,165,250,.08)":bm?.pts===0&&hasAct?"rgba(248,113,113,.06)":"rgba(255,255,255,.03)",border:`1px solid ${bm?.pts===3?"rgba(34,197,94,.2)":bm?.pts===1?"rgba(96,165,250,.2)":"rgba(255,255,255,.05)"}`}}><div style={{display:"flex",justifyContent:"space-between"}}><span style={{color:T.sub}}>{FLAGS[m.home]||"🏳️"} vs {FLAGS[m.away]||"🏳️"}</span>{bm?.pts!==null&&bm?.pts!==undefined&&<span style={{width:14,height:14,borderRadius:"50%",background:bm.pts===3?T.green:bm.pts===1?T.primaryLight:T.red,color:"#fff",fontSize:7,fontWeight:800,display:"inline-flex",alignItems:"center",justifyContent:"center"}}>+{bm.pts}</span>}</div><div style={{display:"flex",gap:5,marginTop:2,flexWrap:"wrap"}}>{hasPred&&<span style={{color:T.muted}}>P:<strong style={{color:T.text}}>{bm.pred.home}–{bm.pred.away}</strong></span>}{hasAct&&<span style={{color:T.muted}}>R:<strong style={{color:T.text}}>{bm.actual.home}–{bm.actual.away}</strong></span>}{!hasPred&&<span style={{color:T.muted,fontStyle:"italic"}}>–</span>}</div></div>;})}
-                  </div>
-                </div>;
-              })}
-            </div>}
+            )}
           </div>
         ))}
       </div>
