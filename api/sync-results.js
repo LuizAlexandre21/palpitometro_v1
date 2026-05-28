@@ -30,16 +30,48 @@ async function fetchFinishedToday() {
   return data.response || [];
 }
 
+async function fetchStatistics(fixtureId) {
+  const res = await fetch(
+    `https://v3.football.api-sports.io/fixtures/statistics?fixture=${fixtureId}`,
+    { headers: { "x-apisports-key": process.env.API_FOOTBALL_KEY } }
+  );
+  const data = await res.json();
+  let yellowCards = 0, expulsions = 0;
+  for (const team of (data.response || [])) {
+    for (const stat of (team.statistics || [])) {
+      if (stat.type === "Yellow Cards") yellowCards += (parseInt(stat.value) || 0);
+      if (stat.type === "Red Cards") expulsions += (parseInt(stat.value) || 0);
+    }
+  }
+  return { yellowCards, expulsions };
+}
+
+async function getRulesForCampeonatos(campeonatoIds) {
+  const results = {};
+  await Promise.all(campeonatoIds.map(async id => {
+    const snap = await db.ref(`campeonatos/${id}/rules`).once("value");
+    results[id] = snap.val() || {};
+  }));
+  return results;
+}
+
 async function getAllCampeonatoIds() {
   const snap = await db.ref("campeonatos").once("value");
   if (!snap.exists()) return [];
   return Object.keys(snap.val());
 }
 
-async function writeResults(matchId, home, away, campeonatoIds) {
+async function writeResults(matchId, home, away, campeonatoIds, extras = {}) {
   const updates = {};
   campeonatoIds.forEach(id => {
-    updates[`campeonatos/${id}/results/${matchId}`] = { home: String(home), away: String(away) };
+    updates[`campeonatos/${id}/results/${matchId}/home`] = String(home);
+    updates[`campeonatos/${id}/results/${matchId}/away`] = String(away);
+    if (extras.yellowCards !== undefined) {
+      updates[`campeonatos/${id}/results/${matchId}/extras/yellowCards`] = extras.yellowCards;
+    }
+    if (extras.expulsions !== undefined) {
+      updates[`campeonatos/${id}/results/${matchId}/extras/expulsions`] = extras.expulsions;
+    }
   });
   await db.ref().update(updates);
 }
@@ -63,6 +95,11 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ message: "No campeonatos found", synced: 0 });
     }
 
+    const allRules = await getRulesForCampeonatos(campeonatoIds);
+    const needStats = campeonatoIds.some(id =>
+      allRules[id]?.yellowCards?.active || allRules[id]?.expulsions?.active
+    );
+
     let synced = 0;
     for (const fixture of fixtures) {
       const fixtureId = fixture.fixture.id;
@@ -73,7 +110,12 @@ module.exports = async function handler(req, res) {
       const away = fixture.goals.away ?? "";
       if (home === "" || away === "") continue;
 
-      await writeResults(matchId, home, away, campeonatoIds);
+      let extras = {};
+      if (needStats) {
+        try { extras = await fetchStatistics(fixtureId); } catch (_) {}
+      }
+
+      await writeResults(matchId, home, away, campeonatoIds, extras);
       synced++;
     }
 
