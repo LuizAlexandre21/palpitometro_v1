@@ -29,9 +29,12 @@ export function TeamCrest({ team, size = 32 }) {
     <img
       src={url}
       alt={team}
-      width={size}
-      height={size}
-      style={{ objectFit: "contain", flexShrink: 0 }}
+      style={{
+        width: size, height: size * 0.67,
+        objectFit: "cover", flexShrink: 0,
+        borderRadius: 3,
+        boxShadow: "0 1px 4px rgba(0,0,0,0.3)",
+      }}
       onError={e => { e.target.style.display = "none"; }}
     />
   );
