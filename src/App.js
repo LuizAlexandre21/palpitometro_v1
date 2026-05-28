@@ -209,7 +209,7 @@ export default function App() {
 
   return (
     <div style={{ minHeight:"100vh", background:"var(--bg)", fontFamily:"'Plus Jakarta Sans',system-ui,sans-serif",
-      color:"var(--text)", display:"flex" }}>
+      color:"var(--text)" }}>
       <Sidebar
         view={view}
         setView={(v) => { setView(v); if (v !== "predictions") setActivePart(null); }}
@@ -219,8 +219,8 @@ export default function App() {
         onLogout={async () => { await logout(); setCampeonatoId(null); }}
         onSwitch={() => setCampeonatoId(null)}
       />
-      <main style={{ flex:1, paddingTop:26, paddingBottom:120, paddingLeft:8, paddingRight:8,
-        overflowX:"hidden", position:"relative" }}>
+      <main style={{ paddingTop:20, paddingBottom:120, paddingLeft:16, paddingRight:16,
+        overflowX:"hidden", position:"relative", maxWidth:1200, margin:"0 auto" }}>
         {view==="home" && <HomeView participants={participants} newName={newName} setNewName={setNewName}
           addParticipant={addParticipant} removeParticipant={removeParticipant} predictions={predictions}
           results={results} leaderboard={leaderboard} setView={setView} poolConfig={poolConfig}
