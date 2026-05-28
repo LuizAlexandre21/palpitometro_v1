@@ -1,4 +1,8 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useAuth } from "./hooks/useAuth";
+import { useCampeonato } from "./hooks/useCampeonato";
+import { AuthModal } from "./components/AuthModal";
+import { CampeonatoGate } from "./components/CampeonatoGate";
 
 // ═══════════════════════════════════════════════════
 //  DATA  (same 48 seleções, 12 grupos, 72 jogos)
@@ -112,28 +116,6 @@ function groupStandings(key,results){
   });
   return Object.values(st).sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf);
 }
-function crc16CCITT(str){
-  let crc=0xFFFF;
-  for(let i=0;i<str.length;i++){crc^=str.charCodeAt(i)<<8;for(let j=0;j<8;j++){crc=(crc&0x8000)?((crc<<1)^0x1021):(crc<<1);crc&=0xFFFF;}}
-  return crc.toString(16).toUpperCase().padStart(4,"0");
-}
-function buildPixPayload({key,holderName,city,amount}){
-  const f=(id,val)=>{const s=String(val);return`${id}${String(s.length).padStart(2,"0")}${s}`;};
-  const merchant=f("00","BR.GOV.BCB.PIX")+f("01",key);
-  const parts=[f("00","01"),f("01","11"),f("26",merchant),f("52","0000"),f("53","986"),
-    ...(Number(amount)>0?[f("54",Number(amount).toFixed(2))]:[]),
-    f("58","BR"),f("59",(holderName||"ADMIN").trim().slice(0,25).toUpperCase()),
-    f("60",(city||"BRASIL").trim().slice(0,15).toUpperCase()),f("62",f("05","***")),"6304"];
-  const payload=parts.join("");
-  return payload+crc16CCITT(payload);
-}
-function decodeGoogleJWT(token){
-  try{
-    const b64=token.split(".")[1].replace(/-/g,"+").replace(/_/g,"/");
-    const json=decodeURIComponent(atob(b64).split("").map(c=>"%"+("00"+c.charCodeAt(0).toString(16)).slice(-2)).join(""));
-    return JSON.parse(json);
-  }catch(e){return null;}
-}
 
 // ═══════════════════════════════════════════════════
 //  TOKENS
@@ -194,10 +176,6 @@ function SectionTitle({children,sub}){
 function Tag({children,color=T.green}){
   return <span style={{fontSize:11,fontWeight:700,padding:"3px 9px",borderRadius:20,background:`${color}18`,color,letterSpacing:.4}}>{children}</span>;
 }
-function QRImage({data,size=200}){
-  if(!data) return null;
-  return <img src={`https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(data)}&bgcolor=070A14&color=F5C518&margin=14&ecc=M`} alt="QR" style={{width:size,height:size,borderRadius:14,display:"block",border:"1px solid rgba(245,197,24,.2)"}}/>;
-}
 function CopyBtn({text,label="Copiar"}){
   const [ok,setOk]=useState(false);
   return <button onClick={async()=>{try{await navigator.clipboard.writeText(text);setOk(true);setTimeout(()=>setOk(false),2e3);}catch(e){}}} style={{padding:"8px 15px",borderRadius:9,border:`1px solid ${ok?T.green:T.border}`,background:ok?`${T.green}15`:"rgba(255,255,255,.06)",color:ok?T.green:T.sub,cursor:"pointer",fontSize:12,fontFamily:"inherit",fontWeight:600,transition:"all .2s"}}>{ok?"✓ Copiado!":"📋 "+label}</button>;
@@ -213,150 +191,11 @@ function LabelInput({label,value,onChange,placeholder,type="text",disabled,hint}
   );
 }
 
-// ═══════════════════════════════════════════════════
-//  GOOGLE SIGN-IN BUTTON  (rendered by GSI SDK)
-// ═══════════════════════════════════════════════════
-function GoogleSignInButton({googleReady,label="Entrar com Google"}){
-  const ref=useRef(null);
-  useEffect(()=>{
-    if(!googleReady||!ref.current) return;
-    const t=setTimeout(()=>{
-      try{
-        window.google?.accounts?.id?.renderButton(ref.current,{
-          theme:"filled_black",size:"large",text:"signin_with",
-          shape:"rectangular",logo_alignment:"left",width:ref.current.offsetWidth||340,
-        });
-      }catch(e){}
-    },80);
-    return()=>clearTimeout(t);
-  },[googleReady]);
-
-  if(!googleReady) return(
-    <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,padding:"13px 20px",borderRadius:11,background:"rgba(255,255,255,.06)",border:`1px solid ${T.border}`,color:T.muted,fontSize:14,cursor:"not-allowed"}}>
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" strokeDasharray="30 10" strokeLinecap="round"><animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/></circle></svg>
-      Carregando Google…
-    </div>
-  );
-  return <div ref={ref} style={{width:"100%",minHeight:44}}/>;
-}
-
-// ═══════════════════════════════════════════════════
-//  LOGIN MODAL
-// ═══════════════════════════════════════════════════
-function LoginModal({participants,poolConfig,onCreatePool,onLogin,onJoin,googleConfig,googleReady,googleError}){
-  const [mode,setMode]=useState(participants.length===0?"setup":"select");
-  const [poolName,setPoolName]=useState("Palpitômetro");
-  const [adminName,setAdminName]=useState("");
-  const [newName,setNewName]=useState("");
-  const hasGoogle=!!(googleConfig?.clientId&&googleReady);
-  const overlay={position:"fixed",inset:0,background:"rgba(0,0,0,.9)",backdropFilter:"blur(20px)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:20,overflowY:"auto"};
-  const modal={...card,maxWidth:460,width:"100%",background:"rgba(9,13,26,.98)",boxShadow:"0 0 80px rgba(245,197,24,.1),0 32px 100px rgba(0,0,0,.8)"};
-
-  if(mode==="setup") return(
-    <div style={overlay}><div style={modal}>
-      <div style={{textAlign:"center",marginBottom:26}}>
-        <div style={{fontSize:58,filter:"drop-shadow(0 0 24px rgba(245,197,24,.5))"}}>🏆</div>
-        <h2 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:40,color:T.gold,letterSpacing:5,margin:"10px 0 3px",lineHeight:1}}>CRIAR CAMPEONATO</h2>
-        <p style={{color:T.sub,fontSize:13,margin:0}}>Palpitômetro Copa 2026 · 100% Gratuito</p>
-      </div>
-      <LabelInput label="Nome do Campeonato" value={poolName} onChange={setPoolName} placeholder="Palpitômetro"/>
-      <LabelInput label="Seu nome (você será o administrador)" value={adminName} onChange={setAdminName} placeholder="Seu nome"/>
-      <button disabled={!poolName.trim()||!adminName.trim()} onClick={()=>onCreatePool(poolName.trim(),adminName.trim(),0)}
-        style={{width:"100%",padding:15,borderRadius:12,border:"none",marginTop:6,fontFamily:"inherit",
-          background:poolName.trim()&&adminName.trim()?`linear-gradient(135deg,${T.gold},#c9a200)`:"rgba(255,255,255,.08)",
-          color:poolName.trim()&&adminName.trim()?"#000":T.muted,fontWeight:800,fontSize:15,
-          cursor:poolName.trim()&&adminName.trim()?"pointer":"default"}}>🚀 Criar Campeonato</button>
-    </div></div>
-  );
-
-  if(mode==="new") return(
-    <div style={overlay}><div style={modal}>
-      <button onClick={()=>setMode("select")} style={{background:"none",border:"none",color:T.gold,cursor:"pointer",fontFamily:"inherit",fontWeight:600,fontSize:14,marginBottom:16,padding:0}}>← Voltar</button>
-      <h2 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:32,color:T.gold,letterSpacing:3,margin:"0 0 4px"}}>NOVO PARTICIPANTE</h2>
-      <p style={{color:T.sub,fontSize:13,marginBottom:18}}>Palpitômetro Copa 2026 · 100% Gratuito</p>
-      {hasGoogle&&(
-        <div style={{marginBottom:16}}>
-          <GoogleSignInButton googleReady={googleReady}/>
-          <div style={{display:"flex",alignItems:"center",gap:10,margin:"14px 0"}}>
-            <div style={{flex:1,height:1,background:T.border}}/><span style={{color:T.muted,fontSize:11}}>ou</span><div style={{flex:1,height:1,background:T.border}}/>
-          </div>
-        </div>
-      )}
-      <LabelInput label="Seu nome" value={newName} onChange={setNewName} placeholder="Como quer ser chamado?"/>
-      <button disabled={!newName.trim()} onClick={()=>onJoin(newName.trim())}
-        style={{width:"100%",padding:14,borderRadius:11,border:"none",fontFamily:"inherit",
-          background:newName.trim()?`linear-gradient(135deg,${T.gold},#c9a200)`:"rgba(255,255,255,.08)",
-          color:newName.trim()?"#000":T.muted,fontWeight:800,fontSize:15,cursor:newName.trim()?"pointer":"default"}}>
-        Entrar no Palpitômetro →
-      </button>
-    </div></div>
-  );
-
-  // Select mode
-  return(
-    <div style={overlay}><div style={modal}>
-      <div style={{textAlign:"center",marginBottom:20}}>
-        <div style={{fontSize:46}}>🏆</div>
-        <h2 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:34,color:T.gold,letterSpacing:4,margin:"8px 0 2px",lineHeight:1}}>{poolConfig?.name||"PALPITÔMETRO"}</h2>
-        <p style={{color:T.sub,fontSize:12,margin:0}}>Identifique-se para entrar</p>
-      </div>
-
-      {/* Google Sign-In — always on top */}
-      {googleConfig?.clientId&&(
-        <div style={{marginBottom:16}}>
-          <div style={{fontSize:11,color:T.muted,fontWeight:600,letterSpacing:.5,textTransform:"uppercase",marginBottom:8}}>
-            {googleConfig.adminEmail?`Admin: ${googleConfig.adminEmail}`:"Login com conta Google"}
-          </div>
-          <GoogleSignInButton googleReady={googleReady}/>
-          {googleError&&<div style={{marginTop:8,padding:"8px 12px",borderRadius:8,background:"rgba(248,113,113,.1)",border:"1px solid rgba(248,113,113,.25)",fontSize:12,color:T.red}}>{googleError}</div>}
-          {!googleReady&&!googleError&&(
-            <div style={{marginTop:6,fontSize:11,color:T.muted}}>Carregando SDK do Google…</div>
-          )}
-        </div>
-      )}
-
-      {participants.length>0&&(
-        <>
-          <div style={{display:"flex",alignItems:"center",gap:10,margin:"14px 0 12px"}}>
-            <div style={{flex:1,height:1,background:T.border}}/>
-            <span style={{color:T.muted,fontSize:11}}>{googleConfig?.clientId?"ou selecione seu nome":"Quem é você?"}</span>
-            <div style={{flex:1,height:1,background:T.border}}/>
-          </div>
-          <div style={{display:"flex",flexDirection:"column",gap:6,maxHeight:260,overflowY:"auto",marginBottom:12}}>
-            {participants.map(p=>(
-              <button key={p.id} onClick={()=>onLogin(p)}
-                style={{padding:"11px 16px",borderRadius:10,border:`1px solid ${p.isAdmin?"rgba(245,197,24,.3)":"rgba(255,255,255,.08)"}`,
-                  background:p.isAdmin?"rgba(245,197,24,.06)":"rgba(255,255,255,.04)",cursor:"pointer",fontFamily:"inherit",
-                  textAlign:"left",display:"flex",alignItems:"center",gap:10,transition:"all .15s"}}
-                onMouseEnter={e=>e.currentTarget.style.background=p.isAdmin?"rgba(245,197,24,.1)":"rgba(255,255,255,.07)"}
-                onMouseLeave={e=>e.currentTarget.style.background=p.isAdmin?"rgba(245,197,24,.06)":"rgba(255,255,255,.04)"}>
-                <Avatar user={p} size={36}/>
-                <div>
-                  <div style={{color:T.text,fontWeight:700,fontSize:14}}>{p.name}</div>
-                  <div style={{fontSize:10,color:p.isAdmin?T.gold:T.muted,marginTop:1}}>
-                    {p.isAdmin?"Administrador":(p.email||new Date(p.id).toLocaleDateString("pt-BR"))}
-                  </div>
-                </div>
-                {p.isAdmin&&<span style={{marginLeft:"auto",fontSize:18}}>👑</span>}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-
-      <div style={{borderTop:`1px solid ${T.border}`,paddingTop:12}}>
-        <button onClick={()=>setMode("new")} style={{width:"100%",padding:"10px",borderRadius:10,border:`1px dashed ${T.border}`,background:"transparent",color:T.sub,cursor:"pointer",fontFamily:"inherit",fontWeight:600,fontSize:13}}>
-          ＋ Sou novo — quero entrar no Palpitômetro
-        </button>
-      </div>
-    </div></div>
-  );
-}
 
 // ═══════════════════════════════════════════════════
 //  HOME VIEW
 // ═══════════════════════════════════════════════════
-function HomeView({participants,newName,setNewName,addParticipant,removeParticipant,predictions,results,leaderboard,setView,poolConfig,currentUser}){
+function HomeView({participants,newName,setNewName,addParticipant,removeParticipant,predictions,results,leaderboard,setView,poolConfig,currentUser,campeonatoId,inviteCode}){
   const total=ALL_MATCHES.length;
   const played=ALL_MATCHES.filter(m=>{const r=results[m.id];return r&&r.home!==""&&r.home!==undefined&&r.away!==""&&r.away!==undefined;}).length;
   const leader=leaderboard[0];
@@ -448,6 +287,23 @@ function HomeView({participants,newName,setNewName,addParticipant,removeParticip
         Nenhuma taxa, nenhuma cobrança. Apenas diversão!{" "}
         Anúncios ajudam a manter o servidor rodando.
       </div>
+      {currentUser?.isAdmin&&inviteCode&&(
+        <div style={{...card,marginBottom:20,background:"rgba(245,197,24,.04)",border:"1px solid rgba(245,197,24,.15)"}}>
+          <h3 style={{color:T.gold,fontWeight:700,fontSize:13,margin:"0 0 10px"}}>🔗 Convite</h3>
+          <div style={{display:"flex",flexDirection:"column",gap:8}}>
+            <div>
+              <div style={{color:T.muted,fontSize:10,textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>Código</div>
+              <div style={{fontFamily:"monospace",fontSize:22,fontWeight:800,color:T.gold,letterSpacing:4}}>{inviteCode}</div>
+            </div>
+            <div>
+              <div style={{color:T.muted,fontSize:10,textTransform:"uppercase",letterSpacing:1,marginBottom:4}}>Link direto</div>
+              <div style={{fontFamily:"monospace",fontSize:11,color:T.sub,wordBreak:"break-all"}}>
+                {window.location.origin}?id={campeonatoId}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -727,10 +583,10 @@ function LeaderboardView({leaderboard,predictions,results}){
 // ═══════════════════════════════════════════════════
 //  CONFIG VIEW
 // ═══════════════════════════════════════════════════
-function ConfigView({poolConfig,updatePoolConfig,googleConfig,updateGoogleConfig,participants,currentUser,googleReady,googleError}){
-  const [tab,setTab]=useState("google");
+function ConfigView({poolConfig,updatePoolConfig,participants,currentUser,campeonatoId,inviteCode}){
+  const [tab,setTab]=useState("pool");
   const isAdmin=currentUser?.isAdmin;
-  const tabs=[{id:"google",label:"🔑 Google OAuth"},{id:"pool",label:"⚙️ Configurações"}];
+  const tabs=[{id:"pool",label:"⚙️ Configurações"},{id:"invite",label:"🔗 Convite"}];
   return(
     <div style={{maxWidth:920,margin:"0 auto",padding:"0 20px"}}>
       <SectionTitle sub={isAdmin?`Administrador: ${currentUser?.name}`:"Visualização — somente o admin edita"}>CONFIGURAÇÕES</SectionTitle>
@@ -740,70 +596,6 @@ function ConfigView({poolConfig,updatePoolConfig,googleConfig,updateGoogleConfig
       <div style={{display:"flex",gap:6,marginBottom:20,flexWrap:"wrap"}}>
         {tabs.map(t=><button key={t.id} onClick={()=>setTab(t.id)} style={{padding:"8px 15px",borderRadius:8,border:"none",background:tab===t.id?T.gold:"rgba(255,255,255,.06)",color:tab===t.id?"#000":T.sub,fontWeight:tab===t.id?700:500,cursor:"pointer",fontSize:13,fontFamily:"inherit"}}>{t.label}</button>)}
       </div>
-
-      {/* ── GOOGLE OAUTH TAB ── */}
-      {tab==="google"&&(
-        <div style={{display:"grid",gridTemplateColumns:"1fr",gap:16}}>
-          <div style={card}>
-            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:20}}>
-              <div style={{width:40,height:40,borderRadius:10,background:"rgba(255,255,255,.08)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                <svg width="22" height="22" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-              </div>
-              <div>
-                <h3 style={{color:T.text,fontWeight:700,fontSize:15,margin:0}}>Google Sign-In</h3>
-                <div style={{fontSize:11,color:googleReady?T.green:googleConfig?.clientId?T.gold:T.muted,marginTop:2}}>
-                  {googleReady?"✓ Configurado e ativo":googleConfig?.clientId?googleError||"⏳ Carregando…":"Não configurado"}
-                </div>
-              </div>
-              {googleReady&&<div style={{marginLeft:"auto",padding:"4px 10px",borderRadius:20,background:`${T.green}15`,border:`1px solid ${T.green}30`,fontSize:11,color:T.green,fontWeight:600}}>● Ativo</div>}
-            </div>
-
-            <LabelInput label="Client ID do Google"
-              value={googleConfig?.clientId}
-              onChange={v=>isAdmin&&updateGoogleConfig({...googleConfig,clientId:v.trim()})}
-              placeholder="000000000000-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com"
-              disabled={!isAdmin}
-              hint="Cole aqui o Client ID OAuth 2.0 do Google Cloud Console"/>
-            <LabelInput label="E-mail do Administrador (recebe acesso de admin ao fazer login com Google)"
-              value={googleConfig?.adminEmail}
-              onChange={v=>isAdmin&&updateGoogleConfig({...googleConfig,adminEmail:v.trim()})}
-              placeholder="admin@gmail.com"
-              disabled={!isAdmin}
-              hint="Qualquer conta Google que fizer login com este e-mail será administrador"/>
-
-            {googleError&&<div style={{padding:"10px 14px",borderRadius:9,background:"rgba(248,113,113,.1)",border:"1px solid rgba(248,113,113,.3)",fontSize:12,color:T.red,marginBottom:14}}>{googleError}</div>}
-
-            {isAdmin&&googleReady&&(
-              <div style={{marginBottom:16}}>
-                <div style={{fontSize:11,color:T.muted,fontWeight:600,marginBottom:8,textTransform:"uppercase",letterSpacing:.5}}>Prévia do botão</div>
-                <GoogleSignInButton googleReady={googleReady}/>
-              </div>
-            )}
-          </div>
-
-          {/* Setup instructions */}
-          <div style={{...card,background:"rgba(96,165,250,.04)",border:"1px solid rgba(96,165,250,.15)"}}>
-            <h4 style={{color:T.blue,fontWeight:700,fontSize:14,margin:"0 0 14px",display:"flex",alignItems:"center",gap:6}}>
-              📖 Como configurar o Google Sign-In
-            </h4>
-            <ol style={{color:T.sub,fontSize:13,lineHeight:1.9,paddingLeft:18,margin:0}}>
-              <li>Acesse <a href="https://console.cloud.google.com" target="_blank" rel="noreferrer" style={{color:T.blue}}>console.cloud.google.com</a></li>
-              <li>Crie ou selecione um projeto</li>
-              <li>Vá em <strong style={{color:T.text}}>APIs e Serviços → Credenciais</strong></li>
-              <li>Clique em <strong style={{color:T.text}}>Criar credenciais → ID do cliente OAuth 2.0</strong></li>
-              <li>Tipo de aplicativo: <strong style={{color:T.text}}>Aplicativo da Web</strong></li>
-              <li>Em <strong style={{color:T.text}}>Origens JavaScript autorizadas</strong>, adicione:<br/>
-                <code style={{background:"rgba(255,255,255,.07)",padding:"2px 6px",borderRadius:4,fontSize:12,color:T.gold}}>https://claude.ai</code>
-              </li>
-              <li>Copie o <strong style={{color:T.text}}>Client ID</strong> e cole no campo acima</li>
-              <li>Defina o <strong style={{color:T.text}}>e-mail do admin</strong> para dar acesso de administrador</li>
-            </ol>
-            <div style={{marginTop:14,padding:"10px 14px",borderRadius:9,background:"rgba(245,197,24,.07)",border:"1px solid rgba(245,197,24,.2)",fontSize:12,color:T.sub,lineHeight:1.6}}>
-              ⚠️ <strong style={{color:T.gold}}>Importante:</strong> O Google Sign-In funciona via popup. Se o navegador bloquear popups, permita o acesso para <code style={{color:T.gold}}>claude.ai</code>.
-            </div>
-          </div>
-        </div>
-      )}
 
       {tab==="pool"&&(
         <div style={card}>
@@ -818,6 +610,21 @@ function ConfigView({poolConfig,updatePoolConfig,googleConfig,updateGoogleConfig
                   {p.isAdmin&&<Tag color={T.gold}>Admin</Tag>}
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+      {tab==="invite"&&(
+        <div style={card}>
+          <h3 style={{color:T.text,fontWeight:700,fontSize:15,margin:"0 0 16px"}}>🔗 Convite</h3>
+          <div style={{marginBottom:14}}>
+            <div style={{color:T.muted,fontSize:10,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>Código de acesso</div>
+            <div style={{fontFamily:"monospace",fontSize:28,fontWeight:800,color:T.gold,letterSpacing:6}}>{inviteCode}</div>
+          </div>
+          <div>
+            <div style={{color:T.muted,fontSize:10,textTransform:"uppercase",letterSpacing:1,marginBottom:6}}>Link direto</div>
+            <div style={{fontFamily:"monospace",fontSize:12,color:T.sub,padding:"8px 12px",background:"rgba(255,255,255,.04)",borderRadius:8,wordBreak:"break-all"}}>
+              {window.location.origin}?id={campeonatoId}
             </div>
           </div>
         </div>
@@ -858,192 +665,217 @@ function UserMenu({currentUser,onSwitch,onLogout}){
   );
 }
 
-// ═══════════════════════════════════════════════════
-//  ROOT APP
-// ═══════════════════════════════════════════════════
-export default function App(){
-  const [view,setView]=useState("home");
-  const [participants,setParticipants]=useState([]);
-  const [results,setResults]=useState({});
-  const [predictions,setPredictions]=useState({});
-  const [activePart,setActivePart]=useState(null);
-  const [newName,setNewName]=useState("");
-  const [loaded,setLoaded]=useState(false);
-  const [koMatches,setKoMatches]=useState({});
-  const [currentUser,setCurrentUser]=useState(null);
-  const [showLogin,setShowLogin]=useState(false);
-  const [poolConfig,setPoolConfig]=useState({name:"Palpitômetro"});
-  const [googleConfig,setGoogleConfig]=useState({clientId:"",adminEmail:""});
-  const [googleReady,setGoogleReady]=useState(false);
-  const [googleError,setGoogleError]=useState("");
+export default function App() {
+  const { firebaseUser, loginWithGoogle, loginWithEmail, registerWithEmail, logout } = useAuth();
+  const [showAuth, setShowAuth] = useState(false);
 
-  // Refs for stable callbacks (avoid stale closures in Google's callback)
-  const participantsRef=useRef([]);
-  const googleConfigRef=useRef({clientId:"",adminEmail:""});
-  useEffect(()=>{participantsRef.current=participants;},[participants]);
-  useEffect(()=>{googleConfigRef.current=googleConfig;},[googleConfig]);
+  const [campeonatoId, setCampeonatoId] = useState(() => {
+    const p = new URLSearchParams(window.location.search);
+    return p.get("id") || null;
+  });
 
-  // Inject fonts
-  useEffect(()=>{
-    const link=document.createElement("link");
-    link.rel="stylesheet";
-    link.href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;600;700;800&family=DM+Mono:wght@500;700&display=swap";
-    document.head.appendChild(link);
-  },[]);
+  const { data, loading, notFound, write, createCampeonato, findByCode, joinCampeonato } = useCampeonato(campeonatoId, firebaseUser);
 
-  // Stable Google credential handler (uses refs to avoid stale data)
-  const handleGoogleCredential=useCallback((response)=>{
-    try{
-      const payload=decodeGoogleJWT(response.credential);
-      if(!payload) return;
-      const {name,email,picture,sub:googleId}=payload;
-      const gCfg=googleConfigRef.current;
-      const parts=participantsRef.current;
-      let user=parts.find(p=>p.googleId===googleId||(p.email&&p.email.toLowerCase()===email.toLowerCase()));
-      if(!user){
-        const isFirstUser=parts.length===0;
-        const isAdminEmail=gCfg.adminEmail&&email.toLowerCase()===gCfg.adminEmail.toLowerCase();
-        user={id:Date.now(),name:name||email.split("@")[0],email,picture,googleId,isAdmin:isFirstUser||isAdminEmail};
-        const updated=[...parts,user];
-        setParticipants(updated);
-        sv("bc-participants",updated);
-      } else {
-        // Update picture / check admin email
-        const shouldAdmin=gCfg.adminEmail&&email.toLowerCase()===gCfg.adminEmail.toLowerCase();
-        const updated=parts.map(p=>p.id===user.id?{...p,picture:picture||p.picture,googleId,isAdmin:p.isAdmin||shouldAdmin}:p);
-        setParticipants(updated);
-        sv("bc-participants",updated);
-        user={...user,picture:picture||user.picture,isAdmin:user.isAdmin||shouldAdmin};
-      }
-      setCurrentUser(user);
-      sv("bc-currentUser",user);
-      setShowLogin(false);
-      setGoogleError("");
-    }catch(e){
-      setGoogleError("Erro ao autenticar com Google. Tente novamente.");
+  const [view, setView] = useState("home");
+  const [activePart, setActivePart] = useState(null);
+  const [newName, setNewName] = useState("");
+
+  const currentUser = useMemo(() => {
+    if (!firebaseUser || !data?.participants) return null;
+    return data.participants[firebaseUser.uid] || null;
+  }, [firebaseUser, data]);
+
+  useEffect(() => {
+    if (campeonatoId) {
+      const params = new URLSearchParams(window.location.search);
+      params.set("id", campeonatoId);
+      window.history.replaceState({}, "", `?${params}`);
     }
-  },[]);
+  }, [campeonatoId]);
 
-  // Load Google Sign-In SDK
-  useEffect(()=>{
-    if(!googleConfig.clientId) return;
-    setGoogleReady(false);
-    setGoogleError("");
-    window._palpitometroGoogleCb=(r)=>handleGoogleCredential(r);
-    const init=()=>{
-      try{
-        window.google.accounts.id.initialize({
-          client_id:googleConfig.clientId,
-          callback:(r)=>window._palpitometroGoogleCb(r),
-          auto_select:false,
-          use_fedcm_for_prompt:false,
-          itp_support:true,
-        });
-        setGoogleReady(true);
-      }catch(e){
-        setGoogleError("Erro ao inicializar Google Sign-In. Verifique o Client ID.");
-      }
-    };
-    if(window.google?.accounts?.id){init();}
-    else{
-      const existing=document.getElementById("gsi-script");
-      if(!existing){
-        const s=document.createElement("script");
-        s.id="gsi-script";s.src="https://accounts.google.com/gsi/client";
-        s.async=true;s.defer=true;
-        s.onload=init;
-        s.onerror=()=>setGoogleError("Falha ao carregar SDK do Google.");
-        document.head.appendChild(s);
-      } else {
-        // Script already loading; wait
-        const t=setInterval(()=>{if(window.google?.accounts?.id){clearInterval(t);init();}},200);
-        setTimeout(()=>clearInterval(t),10000);
-      }
+  async function handleAuth(method, payload) {
+    if (method === "google") await loginWithGoogle();
+    else if (method === "email") await loginWithEmail(payload.email, payload.password);
+    else if (method === "register") await registerWithEmail(payload.email, payload.password, payload.name);
+    setShowAuth(false);
+  }
+
+  async function handleCreateCampeonato(name) {
+    const { id } = await createCampeonato(name, firebaseUser);
+    setCampeonatoId(id);
+  }
+
+  async function handleJoinByCode(code) {
+    const id = await findByCode(code);
+    if (!id) return false;
+    if (!data?.participants?.[firebaseUser.uid]) {
+      await joinCampeonato(id, firebaseUser, firebaseUser.displayName);
     }
-  },[googleConfig.clientId]);
+    setCampeonatoId(id);
+    return true;
+  }
 
-  // Load all state from storage
-  useEffect(()=>{
-    async function load(){
-      try{
-        const keys=["bc-participants","bc-results","bc-predictions","bc-komatches","bc-pool","bc-google","bc-currentUser"];
-        const [p,r,pr,km,pool,gc,cu]=await Promise.all(keys.map(k=>window.storage.get(k).catch(()=>null)));
-        if(p) setParticipants(JSON.parse(p.value));
-        if(r) setResults(JSON.parse(r.value));
-        if(pr) setPredictions(JSON.parse(pr.value));
-        if(km) setKoMatches(JSON.parse(km.value));
-        if(pool) setPoolConfig(JSON.parse(pool.value));
-        if(gc) setGoogleConfig(JSON.parse(gc.value));
-        if(cu){
-          const saved=JSON.parse(cu.value);
-          const ps=p?JSON.parse(p.value):[];
-          if(ps.find(pp=>pp.id===saved.id)){setCurrentUser(saved);}
-          else{setShowLogin(true);}
-        } else {setShowLogin(true);}
-      }catch(e){setShowLogin(true);}
-      setLoaded(true);
-    }
-    load();
-  },[]);
+  function handleJoinById(id) { setCampeonatoId(id); }
 
-  const sv=async(key,val)=>{try{await window.storage.set(key,JSON.stringify(val));}catch(e){}};
-  const addParticipant=()=>{if(!newName.trim()) return;const u=[...participants,{id:Date.now(),name:newName.trim(),isAdmin:false}];setParticipants(u);sv("bc-participants",u);setNewName("");};
-  const removeParticipant=(id)=>{if(participants.find(p=>p.id===id)?.isAdmin) return;const u=participants.filter(p=>p.id!==id);setParticipants(u);sv("bc-participants",u);const np={...predictions};delete np[id];setPredictions(np);sv("bc-predictions",np);};
-  const updateResult=(mid,side,val)=>{const u={...results,[mid]:{...(results[mid]||{}),[side]:val}};setResults(u);sv("bc-results",u);};
-  const updatePrediction=(pid,mid,side,val)=>{const u={...predictions,[pid]:{...(predictions[pid]||{}),[mid]:{...(predictions[pid]?.[mid]||{}),[side]:val}}};setPredictions(u);sv("bc-predictions",u);};
-  const updateKOMatch=(mid,field,val)=>{const u={...koMatches,[mid]:{...(koMatches[mid]||{}),[field]:val}};setKoMatches(u);sv("bc-komatches",u);};
-  const updatePoolConfig=(cfg)=>{setPoolConfig(cfg);sv("bc-pool",cfg);};
-  const updateGoogleConfig=(cfg)=>{setGoogleConfig(cfg);sv("bc-google",cfg);};
-  const handleCreatePool=(name,adminName)=>{
-    const admin={id:Date.now(),name:adminName,isAdmin:true};
-    const pool={name};
-    setParticipants([admin]);sv("bc-participants",[admin]);
-    setPoolConfig(pool);sv("bc-pool",pool);
-    setCurrentUser(admin);sv("bc-currentUser",admin);
-    setShowLogin(false);
+  const participants = useMemo(() => Object.values(data?.participants || {}), [data]);
+  const results = data?.results || {};
+  const predictions = data?.predictions || {};
+  const koMatches = data?.komatches || {};
+
+  const addParticipant = async () => {
+    if (!newName.trim()) return;
+    const u = { uid: newName.trim(), name: newName.trim(), isAdmin: false, joinedAt: Date.now() };
+    await write(`participants/${newName.trim()}`, u);
+    setNewName("");
   };
-  const handleLogin=(p)=>{setCurrentUser(p);sv("bc-currentUser",p);setShowLogin(false);};
-  const handleJoin=(name)=>{const u={id:Date.now(),name,isAdmin:false};const all=[...participants,u];setParticipants(all);sv("bc-participants",all);setCurrentUser(u);sv("bc-currentUser",u);setShowLogin(false);};
-  const handleLogout=()=>{setCurrentUser(null);sv("bc-currentUser",null);setShowLogin(true);};
+  const removeParticipant = async (uid) => {
+    if (data?.participants?.[uid]?.isAdmin) return;
+    await write(`participants/${uid}`, null);
+    const np = { ...predictions };
+    delete np[uid];
+    await write("predictions", np);
+  };
+  const updateResult = async (mid, side, val) => { await write(`results/${mid}/${side}`, val); };
+  const updatePrediction = async (pid, mid, side, val) => { await write(`predictions/${pid}/${mid}/${side}`, val); };
+  const updateKOMatch = async (mid, field, val) => { await write(`komatches/${mid}/${field}`, val); };
+  const updatePoolConfig = async (cfg) => { await write("pool", cfg); };
 
-  const leaderboard=useMemo(()=>participants.map(p=>{
-    let pts=0,exact=0,correct=0;
-    ALL_MATCHES.forEach(m=>{const mp=calcPoints(predictions[p.id]?.[m.id],results[m.id]);if(mp===3){pts+=3;exact++;}else if(mp===1){pts+=1;correct++;}});
-    return{...p,pts,exact,correct};
-  }).sort((a,b)=>b.pts-a.pts),[participants,predictions,results]);
+  const leaderboard = useMemo(() =>
+    participants.map(p => {
+      let pts = 0, exact = 0, correct = 0;
+      ALL_MATCHES.forEach(m => {
+        const mp = calcPoints(predictions[p.uid]?.[m.id], results[m.id]);
+        if (mp === 3) { pts += 3; exact++; }
+        else if (mp === 1) { pts += 1; correct++; }
+      });
+      return { ...p, id: p.uid, pts, exact, correct };
+    }).sort((a, b) => b.pts - a.pts),
+  [participants, predictions, results]);
 
-  const allStandings=useMemo(()=>{const s={};Object.keys(GROUPS).forEach(k=>{s[k]=groupStandings(k,results);});return s;},[results]);
+  const allStandings = useMemo(() => {
+    const s = {};
+    Object.keys(GROUPS).forEach(k => { s[k] = groupStandings(k, results); });
+    return s;
+  }, [results]);
 
-  const navItems=[{id:"home",label:"Início",ico:"🏠"},{id:"predictions",label:"Palpites",ico:"✏️"},{id:"results",label:"Resultados",ico:"⚽"},{id:"groups",label:"Grupos",ico:"📊"},{id:"knockout",label:"Mata-mata",ico:"🥊"},{id:"leaderboard",label:"Ranking",ico:"🥇"},{id:"config",label:"Config",ico:"⚙️"}];
-  if(!loaded) return <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height:"100vh",background:T.bg,color:T.gold,fontFamily:"sans-serif",gap:12}}><div style={{fontSize:48}}>⚽</div><div style={{fontSize:15,letterSpacing:2}}>CARREGANDO PALPITÔMETRO…</div></div>;
+  const navItems = [
+    { id: "home", label: "Início", ico: "🏠" },
+    { id: "predictions", label: "Palpites", ico: "✏️" },
+    { id: "results", label: "Resultados", ico: "⚽" },
+    { id: "groups", label: "Grupos", ico: "📊" },
+    { id: "knockout", label: "Mata-mata", ico: "🥊" },
+    { id: "leaderboard", label: "Ranking", ico: "🥇" },
+    { id: "config", label: "Config", ico: "⚙️" },
+  ];
 
-  return(
-    <div style={{minHeight:"100vh",background:T.bg,fontFamily:"'DM Sans',system-ui,sans-serif",color:T.text}}>
-      <div style={{position:"fixed",inset:0,pointerEvents:"none",zIndex:0,background:"radial-gradient(ellipse 60% 40% at 10% 0%,rgba(34,100,34,.1) 0%,transparent 60%),radial-gradient(ellipse 50% 50% at 90% 100%,rgba(245,197,24,.07) 0%,transparent 60%)"}}/>
-      {showLogin&&<LoginModal participants={participants} poolConfig={poolConfig} onCreatePool={handleCreatePool} onLogin={handleLogin} onJoin={handleJoin} googleConfig={googleConfig} googleReady={googleReady} googleError={googleError}/>}
-      <header style={{position:"sticky",top:0,zIndex:100,background:"rgba(7,10,20,.94)",borderBottom:`1px solid ${T.border}`,backdropFilter:"blur(20px)"}}>
-        <div style={{maxWidth:1200,margin:"0 auto",padding:"0 16px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8,minHeight:56}}>
-          <div style={{display:"flex",alignItems:"center",gap:9}}>
-            <span style={{fontSize:20,filter:"drop-shadow(0 0 8px rgba(245,197,24,.5))"}}>🏆</span>
+  if (firebaseUser === undefined) {
+    return (
+      <div style={{ display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height:"100vh",background:"#070a14",color:"#f5c518",fontFamily:"sans-serif",gap:12 }}>
+        <div style={{ fontSize:48 }}>⚽</div>
+        <div style={{ fontSize:15,letterSpacing:2 }}>CARREGANDO PALPITÔMETRO…</div>
+      </div>
+    );
+  }
+
+  if (!firebaseUser) {
+    return (
+      <div style={{ minHeight:"100vh",background:"#070a14",display:"flex",alignItems:"center",justifyContent:"center",padding:20 }}>
+        <div style={{ maxWidth:420,width:"100%",textAlign:"center" }}>
+          <div style={{ fontSize:70,filter:"drop-shadow(0 0 32px rgba(245,197,24,.4))" }}>🏆</div>
+          <h1 style={{ fontFamily:"'Bebas Neue',sans-serif",fontSize:52,color:"#f5c518",letterSpacing:6,margin:"12px 0 4px" }}>PALPITÔMETRO</h1>
+          <p style={{ color:"#94a3b8",fontSize:13,marginBottom:28 }}>Copa do Mundo 2026 · 100% Gratuito</p>
+          <button onClick={() => setShowAuth(true)}
+            style={{ padding:"14px 40px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#f5c518,#c9a200)",color:"#000",fontWeight:800,fontSize:16,cursor:"pointer",fontFamily:"inherit" }}>
+            Entrar / Criar conta
+          </button>
+        </div>
+        {showAuth && <AuthModal onAuth={handleAuth} onClose={() => setShowAuth(false)} />}
+      </div>
+    );
+  }
+
+  if (!campeonatoId || notFound) {
+    return (
+      <CampeonatoGate
+        firebaseUser={firebaseUser}
+        onCreateCampeonato={handleCreateCampeonato}
+        onJoinByCode={handleJoinByCode}
+        onJoinById={handleJoinById}
+        campeonatos={[]}
+      />
+    );
+  }
+
+  if (loading) {
+    return (
+      <div style={{ display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",background:"#070a14",color:"#f5c518",fontFamily:"sans-serif",fontSize:15,letterSpacing:2 }}>
+        CARREGANDO CAMPEONATO…
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <div style={{ minHeight:"100vh",background:"#070a14",display:"flex",alignItems:"center",justifyContent:"center",padding:20 }}>
+        <div style={{ maxWidth:400,width:"100%",background:"rgba(9,13,26,.98)",border:"1px solid rgba(255,255,255,.1)",borderRadius:18,padding:"32px 24px",textAlign:"center" }}>
+          <div style={{ fontSize:48,marginBottom:12 }}>🔗</div>
+          <h2 style={{ fontFamily:"'Bebas Neue',sans-serif",fontSize:28,color:"#f5c518",letterSpacing:3,margin:"0 0 8px" }}>
+            {data?.pool?.name || "CAMPEONATO"}
+          </h2>
+          <p style={{ color:"#94a3b8",fontSize:13,marginBottom:20 }}>Você foi convidado! Confirme seu nome para entrar.</p>
+          <input
+            value={newName} onChange={e => setNewName(e.target.value)}
+            placeholder={firebaseUser.displayName || "Seu nome no campeonato"}
+            style={{ width:"100%",padding:"10px 13px",borderRadius:9,border:"1px solid rgba(255,255,255,.1)",background:"rgba(255,255,255,.05)",color:"#f1f5f9",fontFamily:"inherit",fontSize:14,outline:"none",boxSizing:"border-box",marginBottom:12 }}
+          />
+          <button
+            onClick={async () => {
+              await joinCampeonato(campeonatoId, firebaseUser, newName || firebaseUser.displayName || firebaseUser.email);
+            }}
+            style={{ width:"100%",padding:13,borderRadius:11,border:"none",background:"linear-gradient(135deg,#f5c518,#c9a200)",color:"#000",fontWeight:800,fontSize:14,cursor:"pointer",fontFamily:"inherit" }}>
+            Entrar no campeonato →
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const poolConfig = data?.pool || { name: "PALPITÔMETRO" };
+
+  return (
+    <div style={{ minHeight:"100vh",background:"#070a14",fontFamily:"'DM Sans',system-ui,sans-serif",color:"#f1f5f9" }}>
+      <div style={{ position:"fixed",inset:0,pointerEvents:"none",zIndex:0,background:"radial-gradient(ellipse 60% 40% at 10% 0%,rgba(34,100,34,.1) 0%,transparent 60%),radial-gradient(ellipse 50% 50% at 90% 100%,rgba(245,197,24,.07) 0%,transparent 60%)" }}/>
+      <header style={{ position:"sticky",top:0,zIndex:100,background:"rgba(7,10,20,.94)",borderBottom:"1px solid rgba(255,255,255,.08)",backdropFilter:"blur(20px)" }}>
+        <div style={{ maxWidth:1200,margin:"0 auto",padding:"0 16px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8,minHeight:56 }}>
+          <div style={{ display:"flex",alignItems:"center",gap:9 }}>
+            <span style={{ fontSize:20,filter:"drop-shadow(0 0 8px rgba(245,197,24,.5))" }}>🏆</span>
             <div>
-              <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:17,color:T.gold,letterSpacing:4,lineHeight:1}}>{poolConfig?.name||"PALPITÔMETRO"}</div>
-              <div style={{fontSize:8,color:T.muted,letterSpacing:2,textTransform:"uppercase"}}>FIFA World Cup 2026 · 48 Seleções</div>
+              <div style={{ fontFamily:"'Bebas Neue',sans-serif",fontSize:17,color:"#f5c518",letterSpacing:4,lineHeight:1 }}>{poolConfig.name||"PALPITÔMETRO"}</div>
+              <div style={{ fontSize:8,color:"#475569",letterSpacing:2,textTransform:"uppercase" }}>FIFA World Cup 2026 · 48 Seleções</div>
             </div>
           </div>
-          <nav style={{display:"flex",gap:2,flexWrap:"wrap",flex:1,justifyContent:"center"}}>
-            {navItems.map(tab=>{const active=view===tab.id;return <button key={tab.id} onClick={()=>{setView(tab.id);if(tab.id!=="predictions")setActivePart(null);}} style={{display:"flex",alignItems:"center",gap:3,padding:"6px 9px",borderRadius:7,border:"none",background:active?T.gold:"transparent",color:active?"#000":T.sub,fontWeight:active?700:500,fontSize:12,cursor:"pointer",fontFamily:"inherit",transition:"all .2s"}}><span>{tab.ico}</span><span>{tab.label}</span></button>;})}
+          <nav style={{ display:"flex",gap:2,flexWrap:"wrap",flex:1,justifyContent:"center" }}>
+            {navItems.map(tab => {
+              const active = view === tab.id;
+              return (
+                <button key={tab.id} onClick={() => { setView(tab.id); if(tab.id !== "predictions") setActivePart(null); }}
+                  style={{ display:"flex",alignItems:"center",gap:3,padding:"6px 9px",borderRadius:7,border:"none",background:active?"#f5c518":"transparent",color:active?"#000":"#94a3b8",fontWeight:active?700:500,fontSize:12,cursor:"pointer",fontFamily:"inherit",transition:"all .2s" }}>
+                  <span>{tab.ico}</span><span>{tab.label}</span>
+                </button>
+              );
+            })}
           </nav>
-          <UserMenu currentUser={currentUser} onSwitch={()=>setShowLogin(true)} onLogout={handleLogout}/>
+          <UserMenu currentUser={currentUser} onLogout={async () => { await logout(); setCampeonatoId(null); }} onSwitch={() => setCampeonatoId(null)} />
         </div>
       </header>
-      <main style={{position:"relative",zIndex:1,paddingTop:26,paddingBottom:80}}>
-        {view==="home"&&<HomeView participants={participants} newName={newName} setNewName={setNewName} addParticipant={addParticipant} removeParticipant={removeParticipant} predictions={predictions} results={results} leaderboard={leaderboard} setView={setView} poolConfig={poolConfig} currentUser={currentUser}/>}
+      <main style={{ position:"relative",zIndex:1,paddingTop:26,paddingBottom:80 }}>
+        {view==="home"&&<HomeView participants={participants} newName={newName} setNewName={setNewName} addParticipant={addParticipant} removeParticipant={removeParticipant} predictions={predictions} results={results} leaderboard={leaderboard} setView={setView} poolConfig={poolConfig} currentUser={currentUser} campeonatoId={campeonatoId} inviteCode={data?.pool?.inviteCode}/>}
         {view==="predictions"&&<PredictionsView participants={participants} activePart={activePart} setActivePart={setActivePart} predictions={predictions} updatePrediction={updatePrediction} results={results} currentUser={currentUser}/>}
         {view==="results"&&<ResultsView results={results} updateResult={updateResult} currentUser={currentUser}/>}
         {view==="groups"&&<GroupsView allStandings={allStandings}/>}
         {view==="knockout"&&<KnockoutView koMatches={koMatches} updateKOMatch={updateKOMatch} currentUser={currentUser}/>}
         {view==="leaderboard"&&<LeaderboardView leaderboard={leaderboard} predictions={predictions} results={results}/>}
-        {view==="config"&&<ConfigView poolConfig={poolConfig} updatePoolConfig={updatePoolConfig} googleConfig={googleConfig} updateGoogleConfig={updateGoogleConfig} participants={participants} currentUser={currentUser} googleReady={googleReady} googleError={googleError}/>}
+        {view==="config"&&<ConfigView poolConfig={poolConfig} updatePoolConfig={updatePoolConfig} participants={participants} currentUser={currentUser} campeonatoId={campeonatoId} inviteCode={data?.pool?.inviteCode}/>}
       </main>
     </div>
   );
