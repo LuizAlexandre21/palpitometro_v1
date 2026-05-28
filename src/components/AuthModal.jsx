@@ -1,10 +1,5 @@
 import { useState } from "react";
-
-const T = {
-  bg: "#070a14", surface: "rgba(255,255,255,.05)", border: "rgba(255,255,255,.1)",
-  text: "#f1f5f9", sub: "#94a3b8", muted: "#475569", gold: "#f5c518",
-  red: "#f87171", blue: "#60a5fa", green: "#4ade80",
-};
+import { T } from "../theme";
 
 export function AuthModal({ onAuth, onClose }) {
   const [mode, setMode] = useState("login"); // "login" | "register"
@@ -15,25 +10,25 @@ export function AuthModal({ onAuth, onClose }) {
   const [loading, setLoading] = useState(false);
 
   const overlay = {
-    position: "fixed", inset: 0, background: "rgba(0,0,0,.85)",
-    backdropFilter: "blur(20px)", zIndex: 2000,
+    position: "fixed", inset: 0, background: "rgba(7,10,20,.9)",
+    backdropFilter: "blur(8px)", zIndex: 2000,
     display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
   };
   const modal = {
-    background: "rgba(9,13,26,.98)", border: `1px solid ${T.border}`,
-    borderRadius: 18, padding: "28px 24px", maxWidth: 400, width: "100%",
-    boxShadow: "0 0 80px rgba(245,197,24,.08)",
+    background: "rgba(13,21,37,.95)", border: "1px solid rgba(59,130,246,.25)",
+    borderRadius: 18, padding: "32px 28px", maxWidth: 400, width: "90%",
   };
   const inp = (extra) => ({
-    width: "100%", padding: "10px 13px", borderRadius: 9, border: `1px solid ${T.border}`,
+    width: "100%", padding: "11px 14px", borderRadius: 10, border: "1px solid rgba(59,130,246,.25)",
     background: "rgba(255,255,255,.05)", color: T.text, fontFamily: "inherit",
     fontSize: 14, outline: "none", boxSizing: "border-box", marginBottom: 10, ...extra,
   });
   const btn = (primary) => ({
-    width: "100%", padding: 13, borderRadius: 11, border: "none", fontFamily: "inherit",
-    fontWeight: 700, fontSize: 14, cursor: "pointer",
-    background: primary ? `linear-gradient(135deg,${T.gold},#c9a200)` : "rgba(255,255,255,.07)",
-    color: primary ? "#000" : T.sub, marginBottom: 8,
+    width: "100%", padding: primary ? "12px" : "11px 16px", borderRadius: 10,
+    border: primary ? "none" : "1px solid rgba(255,255,255,.2)", fontFamily: "inherit",
+    fontWeight: primary ? 700 : 700, fontSize: 14, cursor: "pointer",
+    background: primary ? T.primary : "#fff",
+    color: primary ? "#fff" : "#1a1a1a", marginBottom: 8,
   });
 
   async function handleSubmit(e) {
@@ -64,10 +59,10 @@ export function AuthModal({ onAuth, onClose }) {
       <div style={modal}>
         <div style={{ textAlign: "center", marginBottom: 22 }}>
           <div style={{ fontSize: 44 }}>🏆</div>
-          <h2 style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 34, color: T.gold, letterSpacing: 4, margin: "8px 0 2px" }}>
+          <h2 style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 32, color: T.text, letterSpacing: 3, margin: "0 0 6px" }}>
             {mode === "register" ? "CRIAR CONTA" : "ENTRAR"}
           </h2>
-          <p style={{ color: T.sub, fontSize: 12, margin: 0 }}>Palpitômetro Copa 2026</p>
+          <p style={{ color: T.sub, fontSize: 13, margin: "0 0 24px" }}>Palpitômetro Copa 2026</p>
         </div>
 
         <button style={{ ...btn(false), display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}
@@ -77,7 +72,7 @@ export function AuthModal({ onAuth, onClose }) {
         </button>
 
         <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "4px 0 12px" }}>
-          <div style={{ flex: 1, height: 1, background: T.border }}/><span style={{ color: T.muted, fontSize: 11 }}>ou</span><div style={{ flex: 1, height: 1, background: T.border }}/>
+          <div style={{ flex: 1, height: 1, background: T.border }}/><span style={{ color: T.muted, fontSize: 12, textAlign: "center" }}>ou</span><div style={{ flex: 1, height: 1, background: T.border }}/>
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -86,15 +81,17 @@ export function AuthModal({ onAuth, onClose }) {
           )}
           <input style={inp()} type="email" placeholder="E-mail" value={email} onChange={e => setEmail(e.target.value)} required />
           <input style={inp()} type="password" placeholder="Senha" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} />
-          {error && <div style={{ padding: "8px 12px", borderRadius: 8, background: "rgba(248,113,113,.1)", border: "1px solid rgba(248,113,113,.25)", fontSize: 12, color: T.red, marginBottom: 10 }}>{error}</div>}
+          {error && <div style={{ padding: "8px 12px", borderRadius: 8, background: "rgba(248,113,113,.08)", border: "1px solid rgba(248,113,113,.3)", fontSize: 12, color: "#F87171", marginBottom: 10 }}>{error}</div>}
           <button type="submit" style={btn(true)} disabled={loading}>
             {loading ? "Aguarde…" : mode === "register" ? "Criar conta" : "Entrar"}
           </button>
         </form>
 
-        <button style={{ ...btn(false), marginBottom: 0 }} onClick={() => setMode(mode === "login" ? "register" : "login")}>
-          {mode === "login" ? "Criar nova conta" : "Já tenho conta — entrar"}
-        </button>
+        <div style={{ textAlign: "center", marginTop: 8 }}>
+          <button style={{ color: T.primaryLight, cursor: "pointer", background: "none", border: "none", padding: 0, fontFamily: "inherit", fontSize: 13 }} onClick={() => setMode(mode === "login" ? "register" : "login")}>
+            {mode === "login" ? "Criar nova conta" : "Já tenho conta — entrar"}
+          </button>
+        </div>
       </div>
     </div>
   );

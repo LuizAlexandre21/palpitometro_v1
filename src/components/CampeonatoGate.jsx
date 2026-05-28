@@ -1,9 +1,5 @@
 import { useState } from "react";
-
-const T = {
-  bg: "#070a14", border: "rgba(255,255,255,.1)", text: "#f1f5f9",
-  sub: "#94a3b8", muted: "#475569", gold: "#f5c518", red: "#f87171",
-};
+import { T } from "../theme";
 
 export function CampeonatoGate({ firebaseUser, onCreateCampeonato, onJoinByCode, onJoinById, campeonatos }) {
   const [mode, setMode] = useState("home"); // "home" | "create" | "join"
@@ -13,15 +9,16 @@ export function CampeonatoGate({ firebaseUser, onCreateCampeonato, onJoinByCode,
   const [loading, setLoading] = useState(false);
 
   const inp = {
-    width: "100%", padding: "10px 13px", borderRadius: 9, border: `1px solid ${T.border}`,
+    width: "100%", padding: "11px 14px", borderRadius: 10, border: "1px solid rgba(59,130,246,.25)",
     background: "rgba(255,255,255,.05)", color: T.text, fontFamily: "inherit",
     fontSize: 14, outline: "none", boxSizing: "border-box",
   };
   const btn = (primary) => ({
-    width: "100%", padding: 13, borderRadius: 11, border: "none", fontFamily: "inherit",
-    fontWeight: 700, fontSize: 14, cursor: loading ? "default" : "pointer", marginTop: 10,
-    background: primary ? `linear-gradient(135deg,${T.gold},#c9a200)` : "rgba(255,255,255,.07)",
-    color: primary ? "#000" : T.sub,
+    width: "100%", padding: "13px", borderRadius: 10,
+    border: primary ? "none" : `1px solid ${T.border}`, fontFamily: "inherit",
+    fontWeight: primary ? 700 : 600, fontSize: 14, cursor: loading ? "default" : "pointer", marginTop: 10,
+    background: primary ? T.primary : T.surface,
+    color: primary ? "#fff" : T.text,
   });
 
   async function handleCreate() {
@@ -44,11 +41,12 @@ export function CampeonatoGate({ firebaseUser, onCreateCampeonato, onJoinByCode,
 
   return (
     <div style={{ minHeight: "100vh", background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-      <div style={{ maxWidth: 460, width: "100%", background: "rgba(9,13,26,.98)", border: `1px solid ${T.border}`, borderRadius: 18, padding: "32px 24px" }}>
+      <div style={{ maxWidth: 420, width: "90%", margin: "0 auto", padding: "40px 20px" }}>
+      <div style={{ background: "rgba(13,21,37,.95)", border: "1px solid rgba(59,130,246,.25)", borderRadius: 18, padding: "32px 28px" }}>
         <div style={{ textAlign: "center", marginBottom: 28 }}>
           <div style={{ fontSize: 58, filter: "drop-shadow(0 0 24px rgba(245,197,24,.5))" }}>🏆</div>
-          <h1 style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 38, color: T.gold, letterSpacing: 5, margin: "10px 0 4px" }}>PALPITÔMETRO</h1>
-          <p style={{ color: T.sub, fontSize: 12, margin: 0 }}>Copa do Mundo 2026 · Olá, {firebaseUser.displayName || firebaseUser.email}</p>
+          <h1 style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 32, color: T.text, letterSpacing: 3, margin: "0 0 8px" }}>PALPITÔMETRO</h1>
+          <p style={{ color: T.sub, fontSize: 13, margin: "0 0 24px" }}>Copa do Mundo 2026 · Olá, {firebaseUser.displayName || firebaseUser.email}</p>
         </div>
 
         {campeonatos && campeonatos.length > 0 && (
@@ -77,7 +75,7 @@ export function CampeonatoGate({ firebaseUser, onCreateCampeonato, onJoinByCode,
             <input style={inp} value={name} onChange={e => setName(e.target.value)} placeholder="Ex: Bolão do Trabalho" />
             {error && <div style={{ fontSize: 12, color: T.red, marginTop: 6 }}>{error}</div>}
             <button style={btn(true)} onClick={handleCreate} disabled={!name.trim() || loading}>{loading ? "Criando…" : "🚀 Criar campeonato"}</button>
-            <button style={btn(false)} onClick={() => { setMode("home"); setError(""); }}>← Voltar</button>
+            <button style={{ background: "none", border: "1px solid " + T.border, color: T.primaryLight, borderRadius: 8, padding: "6px 13px", cursor: "pointer", fontFamily: "inherit", marginTop: 10 }} onClick={() => { setMode("home"); setError(""); }}>← Voltar</button>
           </>
         )}
 
@@ -87,9 +85,10 @@ export function CampeonatoGate({ firebaseUser, onCreateCampeonato, onJoinByCode,
             <input style={inp} value={code} onChange={e => setCode(e.target.value.toUpperCase())} placeholder="Ex: COPA26" maxLength={6} />
             {error && <div style={{ fontSize: 12, color: T.red, marginTop: 6 }}>{error}</div>}
             <button style={btn(true)} onClick={handleJoin} disabled={!code.trim() || loading}>{loading ? "Buscando…" : "Entrar no campeonato"}</button>
-            <button style={btn(false)} onClick={() => { setMode("home"); setError(""); }}>← Voltar</button>
+            <button style={{ background: "none", border: "1px solid " + T.border, color: T.primaryLight, borderRadius: 8, padding: "6px 13px", cursor: "pointer", fontFamily: "inherit", marginTop: 10 }} onClick={() => { setMode("home"); setError(""); }}>← Voltar</button>
           </>
         )}
+      </div>
       </div>
     </div>
   );
