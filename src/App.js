@@ -318,9 +318,20 @@ function HomeView({participants,newName,setNewName,addParticipant,removeParticip
 // ═══════════════════════════════════════════════════
 //  PREDICTIONS VIEW
 // ═══════════════════════════════════════════════════
-function PredictionsView({participants,activePart,setActivePart,predictions,updatePrediction,results,currentUser}){
+function PredictionsView({participants,activePart,setActivePart,predictions,updatePrediction,results,currentUser,rules=DEFAULT_RULES}){
   const [collapsed,setCollapsed]=useState(new Set());
   const toggle=g=>setCollapsed(prev=>{const n=new Set(prev);n.has(g)?n.delete(g):n.add(g);return n;});
+  const extraRules = [];
+  for (const [ruleId, rule] of Object.entries(rules)) {
+    if (ruleId === "exactScore" || ruleId === "result") continue;
+    if (ruleId === "custom") {
+      for (const [cid, crule] of Object.entries(rule || {})) {
+        if (crule.active) extraRules.push({ id: cid, ...crule });
+      }
+      continue;
+    }
+    if (rule.active) extraRules.push({ id: ruleId, ...rule });
+  }
   if(participants.length===0) return(
     <div style={{textAlign:"center",padding:"80px 20px",color:T.muted}}>
       <div style={{fontSize:48,marginBottom:12}}>👥</div>
@@ -401,7 +412,39 @@ function PredictionsView({participants,activePart,setActivePart,predictions,upda
                   const pred=predictions[p.id]?.[match.id];
                   const actual=results[match.id];
                   const hasActual=actual?.home!==undefined&&actual?.home!==""&&actual?.away!==undefined&&actual?.away!=="";
-                  return <MatchCard key={match.id} match={match} hVal={pred?.home} aVal={pred?.away} onH={v=>updatePrediction(p.id,match.id,"home",v)} onA={v=>updatePrediction(p.id,match.id,"away",v)} disabled={hasActual} pts={hasActual?calcPoints(pred,actual):null}/>;
+                  return (
+                    <div key={match.id}>
+                      <MatchCard match={match} hVal={pred?.home} aVal={pred?.away}
+                        onH={v=>updatePrediction(p.id,match.id,"home",v)}
+                        onA={v=>updatePrediction(p.id,match.id,"away",v)}
+                        disabled={hasActual} pts={hasActual?calcPoints(pred,actual,rules):null}/>
+                      {extraRules.length>0&&(
+                        <div style={{padding:"8px 14px 10px",marginTop:-4,background:"rgba(59,130,246,.04)",borderRadius:"0 0 12px 12px",border:`1px solid ${T.border}`,borderTop:"none",display:"flex",flexDirection:"column",gap:8}}>
+                          <div style={{fontSize:9,color:T.muted,fontWeight:700,letterSpacing:1,textTransform:"uppercase"}}>Palpites extras</div>
+                          {extraRules.map(er=>(
+                            <div key={er.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
+                              <span style={{fontSize:12,color:T.sub,flex:1}}>{er.label||er.id}</span>
+                              {er.predType==="exact"
+                                ? <input type="number" min="0" disabled={hasActual}
+                                    value={pred?.extras?.[er.id]||""}
+                                    onChange={e=>updatePrediction(p.id,match.id,`extras/${er.id}`,e.target.value)}
+                                    style={{width:60,padding:"5px 8px",borderRadius:7,border:`1px solid ${T.border}`,background:"rgba(255,255,255,.05)",color:T.text,fontSize:13,textAlign:"center",fontFamily:"inherit",outline:"none"}}/>
+                                : <div style={{display:"flex",gap:6}}>
+                                    {["true","false"].map(v=>(
+                                      <button key={v} disabled={hasActual}
+                                        onClick={()=>updatePrediction(p.id,match.id,`extras/${er.id}`,v)}
+                                        style={{padding:"4px 12px",borderRadius:20,border:`1px solid ${pred?.extras?.[er.id]===v?T.primary:T.border}`,background:pred?.extras?.[er.id]===v?"rgba(59,130,246,.2)":"transparent",color:pred?.extras?.[er.id]===v?T.primaryLight:T.sub,cursor:hasActual?"not-allowed":"pointer",fontSize:12,fontFamily:"inherit"}}>
+                                        {v==="true"?"Sim":"Não"}
+                                      </button>
+                                    ))}
+                                  </div>
+                              }
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
                 })}
               </div>
             ))}
