@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export function CampeonatoGate({ firebaseUser, onCreateCampeonato, onJoinByCode, onJoinById, campeonatos }) {
+export function CampeonatoGate({ firebaseUser, onCreateCampeonato, onJoinByCode, onJoinById, campeonatos, onLogout }) {
   const [mode, setMode] = useState("home"); // "home" | "create" | "join"
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
@@ -41,6 +41,9 @@ export function CampeonatoGate({ firebaseUser, onCreateCampeonato, onJoinByCode,
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <button onClick={onLogout} style={{ position: "fixed", top: 16, right: 16, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, padding: "7px 14px", color: "var(--text-muted)", fontSize: 12, fontFamily: "inherit", cursor: "pointer" }}>
+        Sair
+      </button>
       <div style={{ maxWidth: 420, width: "90%", margin: "0 auto", padding: "40px 20px" }}>
       <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 18, padding: "32px 28px" }}>
         <div style={{ textAlign: "center", marginBottom: 28 }}>

@@ -51,7 +51,10 @@ export function AuthModal({ onAuth, onClose }) {
   async function handleGoogle() {
     setError(""); setLoading(true);
     try { await onAuth("google"); }
-    catch (err) { setError(translateError(err.code)); }
+    catch (err) {
+      console.error("Google auth error:", err.code, err.message);
+      setError(translateError(err.code));
+    }
     finally { setLoading(false); }
   }
 
@@ -107,6 +110,11 @@ function translateError(code) {
     "auth/invalid-email": "E-mail inválido.",
     "auth/popup-closed-by-user": "Login cancelado.",
     "auth/network-request-failed": "Erro de conexão.",
+    "auth/operation-not-allowed": "Login com Google não está habilitado. Ative no Firebase Console.",
+    "auth/unauthorized-domain": "Domínio não autorizado no Firebase Console.",
+    "auth/popup-blocked": "Pop-up bloqueado pelo navegador. Libere pop-ups para este site.",
+    "auth/cancelled-popup-request": "Login cancelado.",
+    "auth/invalid-credential": "Credencial inválida ou expirada.",
   };
-  return map[code] || "Erro ao autenticar. Tente novamente.";
+  return map[code] || `Erro ao autenticar (${code || "desconhecido"}). Tente novamente.`;
 }

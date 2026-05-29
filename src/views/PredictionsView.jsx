@@ -96,7 +96,7 @@ export function PredictionsView({ participants, activePart, setActivePart, predi
               </div>
             </div>
             {open&&[1,2,3].map(round=>(
-              <div key={round} style={{marginBottom:8}}>
+              <div key={`${gKey}-${round}`} style={{marginBottom:8}}>
                 <div style={{fontSize:9,color:T.muted,fontWeight:700,letterSpacing:1,textTransform:"uppercase",marginBottom:6}}>{gData.matches.find(m=>m.round===round)?.date} · Rodada {round}</div>
                 {gData.matches.filter(m=>m.round===round).map(match=>{
                   const pred=predictions[p.id]?.[match.id];

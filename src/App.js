@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useRules, DEFAULT_RULES } from "./hooks/useRules";
 import { useAuth } from "./hooks/useAuth";
 import { useTheme } from "./hooks/useTheme";
-import { useCampeonato } from "./hooks/useCampeonato";
+import { useCampeonato, useUserCampeonatos } from "./hooks/useCampeonato";
 import { AuthModal } from "./components/AuthModal";
 import { CampeonatoGate } from "./components/CampeonatoGate";
 import { Sidebar } from "./components/Sidebar";
@@ -29,6 +29,7 @@ export default function App() {
 
   const { data, loading, notFound, write, createCampeonato, findByCode, joinCampeonato } = useCampeonato(campeonatoId, firebaseUser);
   const { rules } = useRules(campeonatoId);
+  const userCampeonatos = useUserCampeonatos(firebaseUser);
 
   const [view, setView] = useState("home");
   const [activePart, setActivePart] = useState(null);
@@ -158,7 +159,8 @@ export default function App() {
         onCreateCampeonato={handleCreateCampeonato}
         onJoinByCode={handleJoinByCode}
         onJoinById={handleJoinById}
-        campeonatos={[]}
+        campeonatos={userCampeonatos}
+        onLogout={async () => { await logout(); }}
       />
     );
   }
