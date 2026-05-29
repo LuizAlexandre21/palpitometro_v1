@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Palpitômetro</string>
+    <string name="title_activity_main">Palpitômetro</string>
+    <string name="package_name">com.palpitometro.app</string>
+    <string name="custom_url_scheme">com.palpitometro.app</string>
+</resources>
