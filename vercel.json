@@ -3,8 +3,8 @@
   "outputDirectory": "build",
   "crons": [
     {
-      "path": "/api/sync-results",
-      "schedule": "*/3 * * * *"
+      "path": "/api/nome-da-sua-rota",
+      "schedule": "0 0 * * *"
     }
   ]
 }
