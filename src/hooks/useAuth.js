@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import {
   onAuthStateChanged,
-  signInWithRedirect,
-  getRedirectResult,
+  signInWithPopup,
   GoogleAuthProvider,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -13,9 +12,7 @@ import { auth } from "../firebase";
 
 export function useAuth() {
   const [firebaseUser, setFirebaseUser] = useState(undefined); // undefined = loading
-
   useEffect(() => {
-    getRedirectResult(auth).catch(() => {});
     const unsub = onAuthStateChanged(auth, (user) => {
       setFirebaseUser(user ?? null);
     });
@@ -24,7 +21,7 @@ export function useAuth() {
 
   const loginWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
-    await signInWithRedirect(auth, provider);
+    await signInWithPopup(auth, provider);
   };
 
   const loginWithEmail = async (email, password) => {
