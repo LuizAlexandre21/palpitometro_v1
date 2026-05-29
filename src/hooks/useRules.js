@@ -3,8 +3,10 @@ import { db } from "../firebase";
 import { ref, onValue, off } from "firebase/database";
 
 export const DEFAULT_RULES = {
-  exactScore: { active: true,  points: 3 },
-  result:     { active: true,  points: 1 },
+  exactScore:  { active: true,  points: 3 },
+  result:      { active: true,  points: 1 },
+  yellowCards: { active: true,  points: 1, predType: "exact", label: "Cartões Amarelos" },
+  expulsions:  { active: true,  points: 2, predType: "boolean", label: "Haverá expulsão?" },
 };
 
 export function useRules(campeonatoId) {
