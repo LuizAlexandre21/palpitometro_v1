@@ -6,7 +6,7 @@
 
 - ✅ 12 grupos com 48 seleções
 - ✅ 72 jogos para fazer palpites
-- ✅ Sistema de ranking em tempo real
+- ✅ Sistema de ranking em tempo reals
 - ✅ Login com Google
 - ✅ 100% gratuito (sem taxas)
 - ✅ Monetizado com Google AdSense
