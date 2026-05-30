@@ -1,6 +1,7 @@
 import { T, card, inp } from "../theme";
 import { TeamCrest } from "../components/TeamCrest";
 import { SectionHeader } from "../components/SectionHeader";
+import { AdSlot } from "../components/AdSlot";
 import { ALL_TEAMS } from "../data/matchData";
 
 export function KnockoutView({ koMatches, updateKOMatch, currentUser }) {
@@ -32,13 +33,17 @@ export function KnockoutView({ koMatches, updateKOMatch, currentUser }) {
           </div>
         </div>
       )}
-      {rounds.map(({key,label,slots})=>{
+      {rounds.map(({key,label,slots},rIdx)=>{
         const matches=Array.from({length:slots},(_,i)=>{
           const mid=`${key}_${i+1}`;
           return {id:mid,...(koMatches?.[mid]||{})};
         });
         return(
-          <div key={key} style={{marginBottom:20}}>
+          <div key={key}>
+          {rIdx>0&&rIdx%2===0&&(
+            <AdSlot slot={process.env.REACT_APP_ADSENSE_SLOT_INLINE} format="rectangle" style={{margin:"0 0 16px"}}/>
+          )}
+          <div style={{marginBottom:20}}>
             <div style={{fontSize:10,fontWeight:700,color:T.sub,textTransform:"uppercase",letterSpacing:1.5,marginBottom:10,marginTop:8}}>{label}</div>
             <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(320px,1fr))",gap:10}}>
               {matches.map(m=>(
@@ -81,6 +86,7 @@ export function KnockoutView({ koMatches, updateKOMatch, currentUser }) {
                 </div>
               ))}
             </div>
+          </div>
           </div>
         );
       })}

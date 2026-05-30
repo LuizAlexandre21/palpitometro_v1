@@ -2,6 +2,7 @@ import { useState } from "react";
 import { T, card } from "../theme";
 import { TeamCrest } from "../components/TeamCrest";
 import { SectionHeader } from "../components/SectionHeader";
+import { AdSlot } from "../components/AdSlot";
 import { LeaderboardRow } from "../components/LeaderboardRow";
 import { GROUPS, ALL_MATCHES } from "../data/matchData";
 import { calcPoints } from "../utils/scoring";
@@ -15,9 +16,12 @@ export function LeaderboardView({ leaderboard, predictions, results }) {
       <SectionHeader title="Ranking Geral" subtitle={`${leaderboard.length} participantes`} />
       <div style={{marginTop:16}}>
         {leaderboard.map((p,i)=>(
-          <div key={p.id} onClick={()=>setSel(sel?.id===p.id?null:p)} style={{cursor:"pointer"}}>
+          <div key={p.id}>
+          {i===5&&<AdSlot slot={process.env.REACT_APP_ADSENSE_SLOT_INLINE} format="auto" style={{margin:"8px 0"}}/>}
+          <div onClick={()=>setSel(sel?.id===p.id?null:p)} style={{cursor:"pointer"}}>
             <LeaderboardRow rank={i+1} participant={p} points={p.pts||0} maxPoints={maxPts} isCurrentUser={false}/>
             {sel?.id===p.id&&(
+
               <div style={{...card,marginBottom:8,marginTop:-2,borderTopLeftRadius:0,borderTopRightRadius:0}}>
                 <div style={{fontSize:11,color:T.sub,marginBottom:12}}>Palpites de <strong style={{color:T.text}}>{p.name}</strong></div>
                 {Object.entries(GROUPS).map(([gKey,gData])=>{
@@ -61,6 +65,7 @@ export function LeaderboardView({ leaderboard, predictions, results }) {
                 })}
               </div>
             )}
+          </div>
           </div>
         ))}
       </div>

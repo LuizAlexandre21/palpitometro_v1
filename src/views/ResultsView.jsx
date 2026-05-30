@@ -3,6 +3,7 @@ import { T, card } from "../theme";
 import { TeamCrest } from "../components/TeamCrest";
 import { MatchCard } from "../components/MatchCard";
 import { SectionHeader } from "../components/SectionHeader";
+import { AdSlot } from "../components/AdSlot";
 import { GROUPS, ALL_MATCHES } from "../data/matchData";
 import { DEFAULT_RULES } from "../hooks/useRules";
 
@@ -43,11 +44,12 @@ export function ResultsView({ results, updateResult, currentUser, rules = DEFAUL
           </div>
         </div>
       </div>
-      {Object.entries(GROUPS).map(([gKey,gData])=>{
+      {Object.entries(GROUPS).map(([gKey,gData],gIdx)=>{
         const open=!collapsed.has(gKey);
         const gDone=gData.matches.filter(m=>{const r=results[m.id];return r&&r.home!==""&&r.home!==undefined&&r.away!==""&&r.away!==undefined;}).length;
         return(
-          <div key={gKey} style={{...card,marginBottom:10}}>
+          <div key={gKey}>
+          <div style={{...card,marginBottom:10}}>
             <div onClick={()=>toggle(gKey)} style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer",marginBottom:open?14:0}}>
               <div style={{width:28,height:28,borderRadius:7,background:T.primary,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Bebas Neue',sans-serif",fontSize:15,color:"#fff",flexShrink:0}}>{gKey}</div>
               <span style={{color:T.text,fontWeight:700,fontSize:13}}>Grupo {gKey}</span>
@@ -94,6 +96,10 @@ export function ResultsView({ results, updateResult, currentUser, rules = DEFAUL
                 )}
               </div>
             ))}
+          </div>
+          {(gIdx===2||gIdx===5||gIdx===8)&&(
+            <AdSlot slot={process.env.REACT_APP_ADSENSE_SLOT_INLINE} format="auto" style={{margin:"8px 0 4px"}}/>
+          )}
           </div>
         );
       })}
