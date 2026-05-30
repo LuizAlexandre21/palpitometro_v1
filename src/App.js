@@ -91,7 +91,11 @@ export default function App() {
     await write("predictions", np);
   };
   const updateResult = async (mid, side, val) => { await write(`results/${mid}/${side}`, val); };
-  const updatePrediction = async (pid, mid, side, val) => { await write(`predictions/${pid}/${mid}/${side}`, val); };
+  const updatePrediction = async (pid, mid, side, val) => {
+    const match = ALL_MATCHES.find(m => m.id === mid);
+    if (match?.kickoff && Date.now() >= new Date(match.kickoff).getTime()) return;
+    await write(`predictions/${pid}/${mid}/${side}`, val);
+  };
   const updateKOMatch = async (mid, field, val) => { await write(`komatches/${mid}/${field}`, val); };
   const updatePoolConfig = async (cfg) => { await write("pool", cfg); };
 
