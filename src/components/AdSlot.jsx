@@ -3,7 +3,7 @@ import { useEffect, useRef } from "react";
 export function AdSlot({ slot, format = "auto", style = {} }) {
   const ref = useRef(null);
   const client = process.env.REACT_APP_ADSENSE_CLIENT;
-  const isDev = !client || client.includes("SEU_PUBLISHER");
+  const isDev = !client || client.includes("SEU_PUBLISHER") || client.includes("ca-pub-SEU");
 
   useEffect(() => {
     if (isDev || !window.adsbygoogle) return;
